@@ -476,6 +476,37 @@ set(DTC_OVERLAY_FILE ${CMAKE_CURRENT_SOURCE_DIR}/${PROJ_DIR}/boards/${BOARD}.ove
 - PLLCTL v2 (HPM6200+): `hpm_pllctlv2_drv.h`
 - `sysctl_config_cpu0_domain_clock` 参数个数不同
 
+### 5.7 多级中断 IRQ 冲突（PLIC + UART DMA）
+
+症状: `gen_isr_tables.py` 报错:
+```
+multiple registrations at table_index 13 for irq 13 (0xd)
+Existing handler 0x310, new handler 0x360
+```
+
+根因: HPM 的 PLIC 驱动强制启用 `CONFIG_MULTI_LEVEL_INTERRUPTS`。GPIO 端口经 `DT_IRQN` 宏编码为多级 IRQ：
+
+```c
+#define IRQ_TO_L2(irq) ((irq + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS)
+```
+
+例如 gpioa(IRQ 1) 编码为 `((1+1)<<8) | 11 = 0x020b`，gen_isr_tables 计算 `table_index = 2ND_LVL_ISR_TBL_OFFSET + 2 - 1`。当 `2ND_LVL_ISR_TBL_OFFSET=12` 时，gpioa 落到 **index 13**，和 UART0 的简单 IRQ 13 冲突。
+
+HPM6E00 无此问题是因为外设 IRQ 号较大（UART0=31），不会与 2nd-level 表重叠。
+
+修复: 在 board 级 `Kconfig.defconfig` 中调整偏移量和表大小：
+```kconfig
+config 2ND_LVL_ISR_TBL_OFFSET
+    default 13          # 避开 IRQ 13
+
+config NUM_IRQS
+    default 160         # 扩大 ISR 表，容纳偏移后的 2nd-level 表
+```
+
+原理: 偏移 +1 后 gpioa(原 index 13) 跳到 index 14，UART0 IRQ 13 仍在 index 13，不再冲突。
+
+注意: 不同芯片的外设 IRQ 号不同（HPM5300 UART0=13，HPM6E00 UART0=31），移植新芯片时需根据 SoC 的 IRQ 映射表调整 `2ND_LVL_ISR_TBL_OFFSET`。
+
 ---
 
 ## 6. 附录：创建自定义 STM32 板

@@ -81,7 +81,7 @@ namespace thread::chassis {
 
 using namespace instance::chassis;
 
-static Thread<1024 * 8> thread_{};
+static Thread<2048> thread_{};
 
 // 电机参数
 static constexpr float    kTorqueK          = 0.3f;               // C6xx 转矩常数 N·m/A
@@ -224,7 +224,6 @@ static void ControlCalculate()
             const float current_ref = wheel_pid[wi].drive_torque.  Calc(torque_ref, snap.torque) / kTorqueK;
             DrivePwrCtrl.SetTarget(wi, current_ref);
             DrivePwrCtrl.SetMotorData(wi, snap.torque, snap.omega, wheel_pid[wi].drive_velocity.GetError());
-
         }
     }
 }

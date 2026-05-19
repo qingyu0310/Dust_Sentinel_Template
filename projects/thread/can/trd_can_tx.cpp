@@ -22,6 +22,12 @@ namespace thread::can {
 static Thread<> thread_{};
 static Can user_can1{};
 
+#ifdef CONFIG_COM_CAN_STBY
+/* 在 projects/boards/ 下对应 board 的 overlay 中定义 stby_gpio 节点来提供引脚 */
+#define STBY_GPIO_NODE DT_NODELABEL(can_stby)
+static const struct gpio_dt_spec stby_ = GPIO_DT_SPEC_GET(STBY_GPIO_NODE, gpios);
+#endif
+
 static void Task(void*, void*, void*)
 {
     can_frame tx{};
@@ -39,11 +45,10 @@ static void Task(void*, void*, void*)
 
 void thread_init()
 {
+#ifdef CONFIG_COM_CAN_STBY
+    Can::InitStby(&stby_);
+#endif
     {
-        const gpio_dt_spec stby = { .port = DEVICE_DT_GET(DT_NODELABEL(gpiof)), .pin = 2, .dt_flags = 0 };
-        if (device_is_ready(stby.port)) {
-            gpio_pin_configure_dt(&stby, GPIO_OUTPUT_LOW);
-        }
         const device* dev = DEVICE_DT_GET(DT_ALIAS(user_can1));
         if (!device_is_ready(dev)) return;
         const can_filter filter { .id = 0, .mask = 0, .flags = 0 };

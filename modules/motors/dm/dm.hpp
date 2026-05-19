@@ -104,7 +104,7 @@ public:
     float GetNowRad()   const { return now_rad_;    }               // 电机轴位置 (rad)
     float GetNowAng()   const { return now_ang_;    }               // 电机轴角度 (°)
     float GetNowVel()   const { return now_vel_;    }               // 线速度 (m/s)
-    float GetNowOmg()   const { return now_omg_;    }       // 当前角速度 (rad/s)
+    float GetNowOmg()   const { return now_omg_;    }               // 当前角速度 (rad/s)
     float GetNowTor()   const { return now_tor_;    }               // 转矩 (N*m)
     float GetNowTmos()  const { return now_tmos_;   }               // MOSFET 温度 (°C)
     float GetNowTcoil() const { return now_tcoil_;  }               // 线圈温度 (°C)
