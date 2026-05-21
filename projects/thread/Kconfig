@@ -1,7 +1,4 @@
-# projects/thread/Kconfig — 线程与项目配置（应用层）
-# 统一 rsource 所有子模块的 Kconfig
-# 定义 TRD_* 线程开关、USE_* 功能开关、USER_* 调试开关
-# 每个 TRD_* 负责 select 其所依赖的子模块 config，不依赖 prj.conf 手动配置
+# Application thread and feature configuration.
 
 rsource "../../drivers/Kconfig"
 rsource "../../algorithm/Kconfig"
@@ -11,91 +8,79 @@ rsource "../../cmd/shell/Kconfig"
 
 ######################################################
 
-# gpio线程 翻转led灯，用来反应代码是否运行
 config TRD_GPIO
-    default y
     bool "GPIO thread task"
-    select DEV_GPIO
+    default y
+    # select DEV_GPIO
+    select MOD_DEV_WS2812B
     select CTL_TIMER
     help
-        使能GPIO线程
+      Enable the GPIO/output indicator thread.
 
 ######################################################
 
-# chassis线程
 config TRD_CHASSIS
-    default y
     bool "Chassis control thread"
+    default y
     select MOD_CTL_POWER
     select MOD_DEV_MOTOR_DJI
     select TPC_TO_CAN_TX
     select TPC_REMOTE_TO
-
     help
-        使能底盘控制线程
+      Enable chassis control thread.
 
-# 是否开启功率计
 config USE_POWERMETER
     bool "Power meter"
     depends on TRD_CHASSIS
     default n
     select MOD_DEV_POWERMETER
     help
-        使能功率计（依赖底盘线程开启）
+      Enable power meter support for chassis control.
 
 ######################################################
 
-# gimbal线程
 config TRD_GIMBAL
-    default n
     bool "Gimbal control thread"
+    default n
     select CTL_PID
     select MOD_DEV_MOTOR_DM
     select TPC_TO_CAN_TX
     select TPC_REMOTE_TO
-
     help
-        使能云台控制线程
+      Enable gimbal control thread.
 
 ######################################################
 
-# can发送线程
 config TRD_CAN_TX
-    default y
     bool "CAN TX thread"
+    default y
     select COM_CAN
     select TPC_TO_CAN_TX
     help
-        使能CAN发送线程，从消息队列取帧发送
+      Enable CAN TX thread.
 
 ######################################################
 
-# remote线程
 config TRD_REMOTE
-    default y
     bool "Remote thread"
+    default y
     select MOD_DEV_REMOTE
     help
-        使能遥控线程
+      Enable remote receiver thread.
 
 ######################################################
 
-# tflm线程（默认关闭，需测试时手动开）
 config TRD_TFLM
     bool "TFLM inference thread"
-    default y
+    default n
     select TFLM
     help
-        使能 TFLM 推理测试线程
+      Enable TFLM inference test thread.
 
 ######################################################
 
-# 用户添加测试
 config USER_TEST_ADD
+    bool "User test add config"
     default y
-    bool "user's test add config"
     help
-        临时添加你想测试的config
-
-
-
+      Temporary user test switch.

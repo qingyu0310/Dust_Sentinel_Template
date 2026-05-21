@@ -1,7 +1,34 @@
 /**
  * @file dm.cpp
  * @author qingyu
- * @brief
+ * @brief 达妙（DM）系列电机驱动
+ *
+ * ## 协议说明
+ *
+ * ### 反馈帧（RX — 8 字节）
+ * | 字节 | 内容 |
+ * |------|------|
+ * | 0    | bit[3:0] = CAN_ID, bit[7:4] = 错误状态 |
+ * | 1-2  | 编码器值（16bit） |
+ * | 3-4  | 速度（12bit，高 4bit 在字节 3 低半字节） |
+ * | 4-5  | 转矩（12bit，低 4bit 在字节 4 高半字节） |
+ * | 6    | MOS 温度 |
+ * | 7    | 线圈温度 |
+ *
+ * ### 控制帧（TX — 因模式而异）
+ *
+ * 达妙电机控制 CAN_ID = 基础 CAN_ID + 模式偏移量：
+ * | 模式 | 偏移 | 说明 |
+ * |------|------|------|
+ * | MIT  | 0x000 | 刚度-阻尼位置控制 |
+ * | Pos  | 0x100 | 位置-速度控制（float32×2） |
+ * | Spd  | 0x200 | 速度控制（float32） |
+ * | Psi  | 0x300 | 力位混合控制 |
+ *
+ * 注意：不同于 DJI 电机固定 1（TX）对 4（RX）的 ID 映射，
+ * DM 的 TX ID 随模式自动偏移，同一电机在不同模式下
+ * 使用不同的 CAN ID 发送控制帧。
+ *
  * @version 0.1
  * @date 2026-05-14
  *
@@ -33,6 +60,9 @@ float uint_to_float(int x_int, float x_min, float x_max, int bits)
 /**
  * @brief 初始化电机配置
  *
+ * 根据控制模式附加 CAN_ID 偏移（Mit=0x000 / Pos=0x100 / Spd=0x200 / Psi=0x300），
+ * 同一电机在不同模式下使用不同的 TX ID 发送控制帧。
+ *
  * @param cfg 电机配置参数
  */
 void DmMotor::Init(Config cfg)
@@ -42,16 +72,16 @@ void DmMotor::Init(Config cfg)
     switch (cfg_.ctrl_met)
     {
         case ControlMethon::Mit:
-            cfg_.can_id += 0x000;
+            cfg_.can_id += 0x000;           // MIT: 刚度-阻尼位置控制
             break;
         case ControlMethon::Pos:
-            cfg_.can_id += 0x100;
+            cfg_.can_id += 0x100;           // Pos: 位置-速度控制
             break;
         case ControlMethon::Spd:
-            cfg_.can_id += 0x200;
+            cfg_.can_id += 0x200;           // Spd: 纯速度控制
             break;
         case ControlMethon::Psi:
-            cfg_.can_id += 0x300;
+            cfg_.can_id += 0x300;           // Psi: 力位混合控制
             break;
     }
 }
@@ -69,19 +99,27 @@ void DmMotor::PwrLossCheck()
 /**
  * @brief CAN 接收中断回调，解析电机反馈数据
  *
+ * 反馈帧格式（字节0包含 ID + 错误状态，字节1-7为编码器/速度/转矩/温度）：
+ *   [0] bit[3:0] = ID, bit[7:4] = err
+ *   [1-2] 编码器 (16bit)
+ *   [3-4] 速度 (12bit)
+ *   [4-5] 转矩 (12bit)
+ *   [6] MOS 温度
+ *   [7] 线圈温度
+ *
  * @param buffer CAN 数据帧 8 字节
  */
 void DmMotor::CanCpltRxCallback(uint8_t* buffer)
 {
     const uint8_t* data  =  buffer;
 
-    const uint8_t  id    =  data[0] & 0x0F;
+    const uint8_t  id    =  data[0] & 0x0F;      // ID 在低半字节
     if (id != cfg_.can_id) return;
 
-    const uint8_t  err   =   data[0] >> 4;
-    const uint16_t enc   = (static_cast<uint16_t>(data[1]) << 8) | data[2];
-    const int32_t  v_int = ( data[3] << 4)         | (data[4] >> 4);
-    const int32_t  t_int = ((data[4] & 0x0F) << 8) |  data[5];
+    const uint8_t  err   =   data[0] >> 4;        // 错误状态在高半字节
+    const uint16_t enc   = (static_cast<uint16_t>(data[1]) << 8) | data[2];           // 16bit 编码器
+    const int32_t  v_int = ( data[3] << 4)         | (data[4] >> 4);                  // 12bit 速度
+    const int32_t  t_int = ((data[4] & 0x0F) << 8) |  data[5];                        // 12bit 转矩
 
     // 多圈角度追踪
     int32_t delta = static_cast<int32_t>(enc) - static_cast<int32_t>(pre_encoder_);

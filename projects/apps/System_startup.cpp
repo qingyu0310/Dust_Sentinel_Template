@@ -65,7 +65,6 @@ void System_Thread_Start()
 #ifdef CONFIG_TRD_CHASSIS
     chassis ::thread_start(5);
 #endif
-
 #ifdef CONFIG_TRD_GIMBAL
     gimbal  ::thread_start(5);
 #endif

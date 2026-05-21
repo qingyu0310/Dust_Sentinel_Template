@@ -12,6 +12,7 @@
 #include "trd_tflm.hpp"
 #include "thread.hpp"
 #include "tflm.hpp"
+#include "zephyr/kernel.h"
 
 namespace thread::ml {
 
@@ -21,7 +22,7 @@ static void Task(void*, void*, void*)
 {
     for (;;)
     {
-        
+        k_msleep(1000);
     }
 }
 

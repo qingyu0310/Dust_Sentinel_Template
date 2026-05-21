@@ -86,10 +86,10 @@ inline static void publishOutputData(const OutputData& od, Message& pub)
             break;
     }
 
-    pub.reload_ctrl   = od.sw.fn1       ? StartMode::On : StartMode::Off;
-    pub.shoot_ctrl    = od.sw.fn2       ? StartMode::On : StartMode::Off;
-    pub.autoaim_ctrl  = od.sw.fn2       ? StartMode::On : StartMode::Off;
-    pub.supercap_ctrl = od.keyboard.v() ? StartMode::On : StartMode::Off;
+    pub.reload_ctrl   = od.sw.fn1     ? StartMode::On : StartMode::Off;
+    pub.shoot_ctrl    = od.sw.fn2     ? StartMode::On : StartMode::Off;
+    pub.autoaim_ctrl  = od.sw.fn2     ? StartMode::On : StartMode::Off;
+    pub.supercap_ctrl = od.keyboard.v ? StartMode::On : StartMode::Off;
 
     pub.version++;
     zbus_chan_pub(&pub_remote_to, &pub, K_MSEC(1));
@@ -105,10 +105,11 @@ bool dataprocess(uint8_t* buffer, uint8_t len, Message& pub)
         return false;
     }
 
+    // 端序问题：reinterpret_cast 不处理字节序，VT13 发小端 + ARM 小端才刚好能用
     const RawData* raw_data = reinterpret_cast<RawData const*>(buffer);
 
     static KeyboardState keyboard_state_{};
-
+    
     OutputData od{};
 
     constexpr int16_t kCenter = 1024;

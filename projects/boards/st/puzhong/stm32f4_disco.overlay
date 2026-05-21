@@ -1,16 +1,16 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
+	aliases {
+		user-can1 = &can1;
+		uart-remote = &usart1;
+	};
 	leds {
 		compatible = "gpio-leds";
 		led_alert: led_alert {
 			gpios = <&gpiof 9 GPIO_ACTIVE_LOW>;
 			label = "LED_RED";
 		};
-	};
-	aliases {
-		user-can1 = &can1;
-		uart-remote = &usart1;
 	};
 };
 

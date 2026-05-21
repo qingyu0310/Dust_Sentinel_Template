@@ -21,25 +21,26 @@ struct Mouse
     float left = 0.0f, right = 0.0f;
 };
 
-struct Keyboard {
+union Keyboard {
     uint16_t all;
-
-    bool w()     const { return all & (1 << 0); }
-    bool s()     const { return all & (1 << 1); }
-    bool a()     const { return all & (1 << 2); }
-    bool d()     const { return all & (1 << 3); }
-    bool shift() const { return all & (1 << 4); }
-    bool ctrl()  const { return all & (1 << 5); }
-    bool q()     const { return all & (1 << 6); }
-    bool e()     const { return all & (1 << 7); }
-    bool r()     const { return all & (1 << 8); }
-    bool f()     const { return all & (1 << 9); }
-    bool g()     const { return all & (1 << 10); }
-    bool z()     const { return all & (1 << 11); }
-    bool x()     const { return all & (1 << 12); }
-    bool c()     const { return all & (1 << 13); }
-    bool v()     const { return all & (1 << 14); }
-    bool b()     const { return all & (1 << 15); }
+    struct {
+        uint16_t w     : 1;  // bit 0
+        uint16_t s     : 1;  // bit 1
+        uint16_t a     : 1;  // bit 2
+        uint16_t d     : 1;  // bit 3
+        uint16_t shift : 1;  // bit 4
+        uint16_t ctrl  : 1;  // bit 5
+        uint16_t q     : 1;  // bit 6
+        uint16_t e     : 1;  // bit 7
+        uint16_t r     : 1;  // bit 8
+        uint16_t f     : 1;  // bit 9
+        uint16_t g     : 1;  // bit 10
+        uint16_t z     : 1;  // bit 11
+        uint16_t x     : 1;  // bit 12
+        uint16_t c     : 1;  // bit 13
+        uint16_t v     : 1;  // bit 14
+        uint16_t b     : 1;  // bit 15
+    };
 };
 
 struct KeyboardState
@@ -81,8 +82,8 @@ inline float normMouse(float v, float scale)
 template<typename OutData>
 inline void processChannel(topic::remote_to::Message& pub, OutData od)
 {
-    pub.chassisy = od.keyboard.w() ? 1.0f : od.keyboard.s() ? -1.0f : od.ch.chassisy;
-    pub.chassisx = od.keyboard.a() ? 1.0f : od.keyboard.d() ? -1.0f : od.ch.chassisx;
+    pub.chassisy = od.keyboard.w ? 1.0f : od.keyboard.s ? -1.0f : od.ch.chassisy;
+    pub.chassisx = od.keyboard.a ? 1.0f : od.keyboard.d ? -1.0f : od.ch.chassisx;
     pub.pitch    = od.mouse.y             + od.ch.pitch;
     pub.yaw      = od.mouse.x             + od.ch.yaw;
 }

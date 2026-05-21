@@ -8,7 +8,7 @@
 		compatible = "gpio-leds";
 		led_alert: led_alert {
 			gpios = <&gpioe 14 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
-			label = "LED_RED";
+			label = "LED_ALERT";
 		};
 	};
 };

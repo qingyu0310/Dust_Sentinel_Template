@@ -1,6 +1,11 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
+	aliases {
+		user-can1 = &can1;
+		uart-debug = &usart6;
+		uart-remote = &usart3;
+	};
 	chosen {
 		zephyr,console = &usart6;
 		zephyr,shell-uart = &usart6;
@@ -11,11 +16,6 @@
 			gpios = <&gpioh 12 GPIO_ACTIVE_LOW>;
 			label = "LED_RED";
 		};
-	};
-	aliases {
-		user-can1 = &can1;
-		uart-debug = &usart6;
-		uart-remote = &usart3;
 	};
 };
 

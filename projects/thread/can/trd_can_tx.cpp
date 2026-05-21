@@ -14,6 +14,8 @@
 #include "to_can_tx.hpp"
 #include "thread.hpp"
 #include <string.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/byteorder.h>
 
 namespace thread::can {
 
@@ -39,7 +41,10 @@ static void Task(void*, void*, void*)
         tx.id  = msg.tx_id;
         tx.dlc = 8;
         memcpy(tx.data, msg.data, 8);
-        user_can1.Send(&tx);
+
+        if (!user_can1.Send(&tx)) {
+            printk("trd_can_tx: send failed id=0x%x\n", tx.id);
+        }
     }
 }
 

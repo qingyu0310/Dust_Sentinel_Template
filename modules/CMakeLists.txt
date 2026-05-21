@@ -13,6 +13,10 @@ if(CONFIG_MOD_DEV_POWERMETER)
 	target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/powermeter)
 endif()
 
+if(CONFIG_MOD_DEV_WS2812B)
+	target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/leds)
+endif()
+
 if(CONFIG_MOD_DEV_REMOTE)
 	target_sources(app PRIVATE
 		${CMAKE_CURRENT_SOURCE_DIR}/remotes/remote.cpp

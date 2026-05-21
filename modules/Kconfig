@@ -31,3 +31,9 @@ config MOD_DEV_REMOTE
     help
         遥控器
 
+config MOD_DEV_WS2812B
+    bool "WS2812B LED"
+    default n
+    select DEV_GPIO
+    help
+        WS2812B addressable RGB LED.

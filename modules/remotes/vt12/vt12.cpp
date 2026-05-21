@@ -25,21 +25,21 @@ struct OutputData
 // 将解析后的数据发布到 zbus 通道
 inline static void publishOutputData(const OutputData& od, Message& pub)
 {
-    pub.chassisy = od.keyboard.w() ? 1.0f : od.keyboard.s() ? -1.0f : 0.0f;
-    pub.chassisx = od.keyboard.a() ? 1.0f : od.keyboard.d() ? -1.0f : 0.0f;
+    pub.chassisy = od.keyboard.w ? 1.0f : od.keyboard.s ? -1.0f : 0.0f;
+    pub.chassisx = od.keyboard.a ? 1.0f : od.keyboard.d ? -1.0f : 0.0f;
     pub.pitch    = od.mouse.y;
     pub.yaw      = od.mouse.x;
 
-    if (od.keyboard.shift()) {
+    if (od.keyboard.shift) {
         pub.chassis_mode = ChassisMode::Spin;
     }  else {
         pub.chassis_mode = ChassisMode::Normal;
     }
 
-    pub.shoot_ctrl    = od.keyboard.f() ? StartMode::On : StartMode::Off;
-    pub.reload_ctrl   = od.mouse.left   ? StartMode::On : StartMode::Off;
-    pub.autoaim_ctrl  = od.mouse.right  ? StartMode::On : StartMode::Off;
-    pub.supercap_ctrl = od.keyboard.v() ? StartMode::On : StartMode::Off;
+    pub.shoot_ctrl    = od.keyboard.f  ? StartMode::On : StartMode::Off;
+    pub.reload_ctrl   = od.mouse.left  ? StartMode::On : StartMode::Off;
+    pub.autoaim_ctrl  = od.mouse.right ? StartMode::On : StartMode::Off;
+    pub.supercap_ctrl = od.keyboard.v  ? StartMode::On : StartMode::Off;
 
     pub.version++;
     zbus_chan_pub(&pub_remote_to, &pub, K_MSEC(1));
@@ -52,7 +52,7 @@ bool dataprocess(uint8_t* buffer, uint8_t len, Message& pub)
 
     //  协议头（6 字节）
     uint8_t  start_of_frame = buffer[0];
-    // 裁判系统通用数据，未用上
+    // 老裁判系统通用数据，未用上
     // uint16_t data_length    = (uint16_t)buffer[1] | ((uint16_t)buffer[2] << 8);  
     // uint8_t  seq            = buffer[3];
     // uint8_t  crc8           = buffer[4];

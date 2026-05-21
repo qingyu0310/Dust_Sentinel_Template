@@ -21,9 +21,9 @@ void PowerMeter::CanCpltRxCallback(uint8_t* buffer)
 
     /* seqlock 写锁：允许其他中断，线程读到冲突时会自旋重试 */
     atomic_inc(&seq_);
-    shunt_volt = static_cast<float>(shunt_raw)   * 0.001f;
-    bus_volt   = static_cast<float>(bus_raw)     * 0.001f;
-    current    = static_cast<float>(current_raw) * 0.001f;
-    power      = static_cast<float>(power_raw)   * 0.01f;
+    shunt_volt = static_cast<float>(shunt_raw)   * 0.001f;  // V
+    bus_volt   = static_cast<float>(bus_raw)     * 0.001f;  // V
+    current    = static_cast<float>(current_raw) * 0.001f;  // A
+    power      = static_cast<float>(power_raw)   * 0.01f;   // W
     atomic_inc(&seq_);
 }

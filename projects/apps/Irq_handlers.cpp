@@ -57,6 +57,7 @@ void user_can1_rx_callback(struct can_frame &frame, void *)
         case kBYawMasterId:
             big_yaw_.motor.CanCpltRxCallback(frame.data);
             break;
+            
     #endif
             
         default:
