@@ -11,9 +11,7 @@
 
 #pragma once
 
-#include "can.hpp"
-
-void user_can1_rx_callback(struct can_frame &frame, void *);
+#include "stdint.h"
 
 namespace thread::can {
     void thread_init();

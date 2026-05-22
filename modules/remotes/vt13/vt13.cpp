@@ -66,8 +66,7 @@ struct OutputData
     Keyboard keyboard;
 };
 
-// 将解析后的数据发布到 zbus 通道
-inline static void publishOutputData(const OutputData& od, Message& pub)
+inline static void fillOutputData(const OutputData& od, Message& pub)
 {
     processChannel(pub, od);
 
@@ -92,20 +91,31 @@ inline static void publishOutputData(const OutputData& od, Message& pub)
     pub.supercap_ctrl = od.keyboard.v ? StartMode::On : StartMode::Off;
 
     pub.version++;
-    zbus_chan_pub(&pub_remote_to, &pub, K_MSEC(1));
 }
 
-// 解码 + 校验 → 返回 false 表示帧错位
-bool dataprocess(uint8_t* buffer, uint8_t len, Message& pub)
+bool validate(const uint8_t* buffer, uint8_t len)
 {
-    if (len < 21) return false;
+    if (len != kFrameSizeVT13) return false;
+    if (buffer[0] != 0xA9 || buffer[1] != 0x53) return false;
 
-    // 校验：帧头必须为 0xA9 0x53
-    if (buffer[0] != 0xA9 || buffer[1] != 0x53) {
-        return false;
-    }
+    const RawData* raw_data = reinterpret_cast<RawData const*>(buffer);
 
-    // 端序问题：reinterpret_cast 不处理字节序，VT13 发小端 + ARM 小端才刚好能用
+    constexpr uint16_t kMaxChannel = 1684;
+    constexpr uint16_t kMinChannel = 364;
+
+    if (raw_data->channel_0 < kMinChannel || raw_data->channel_0 > kMaxChannel) return false;
+    if (raw_data->channel_1 < kMinChannel || raw_data->channel_1 > kMaxChannel) return false;
+    if (raw_data->channel_2 < kMinChannel || raw_data->channel_2 > kMaxChannel) return false;
+    if (raw_data->channel_3 < kMinChannel || raw_data->channel_3 > kMaxChannel) return false;
+    if (raw_data->wheel     < kMinChannel || raw_data->wheel     > kMaxChannel) return false;
+
+    return true;
+}
+
+bool decode(const uint8_t* buffer, uint8_t len, Message& pub)
+{
+    if (!validate(buffer, len)) return false;
+
     const RawData* raw_data = reinterpret_cast<RawData const*>(buffer);
 
     static KeyboardState keyboard_state_{};
@@ -141,8 +151,13 @@ bool dataprocess(uint8_t* buffer, uint8_t len, Message& pub)
     Keyboard cur_raw { .all = raw_data->keyboard };
     keyboard_state_.Process(od.keyboard, cur_raw);
 
-    publishOutputData(od, pub);
+    fillOutputData(od, pub);
     return true;
+}
+
+bool dataprocess(const uint8_t* buffer, uint8_t len, Message& pub)
+{
+    return decode(buffer, len, pub);
 }
 
 }

@@ -16,6 +16,8 @@
 #include <string.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/byteorder.h>
+#include "can.hpp"
+#include "Irq_handlers.h"
 
 namespace thread::can {
 

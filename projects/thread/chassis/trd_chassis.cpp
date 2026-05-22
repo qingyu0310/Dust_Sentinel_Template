@@ -84,35 +84,35 @@ using namespace instance::chassis;
 static Thread<2048> thread_{};
 
 // 电机参数
-static constexpr float    kTorqueK          = 0.3f;               // C6xx 转矩常数 N·m/A
-static constexpr float    kCurrentScale     = 16384.0f / 20.0f;   // 电流缩放系数
+static constexpr float    kTorqueK          = 0.3f;                             // C6xx 转矩常数 N·m/A
+static constexpr float    kCurrentScale     = 16384.0f / 20.0f;                 // 电流缩放系数
 
-static constexpr uint8_t  kTotalBudget      = 20;                 // 底盘总功率预算 W
-static constexpr float    kChassisR         = 0.135f;             // 舵轮距车体中心距离
-static constexpr uint16_t kChassisTxId      = 0x200;              // 底盘can发送id
+static constexpr uint8_t  kTotalBudget      = 20;                               // 底盘总功率预算 W
+static constexpr float    kChassisR         = 0.135f;                           // 舵轮距车体中心距离
+static constexpr uint16_t kChassisTxId      = 0x200;                            // 底盘can发送id
 
 // 舵轮位置（右手系）
 static constexpr struct { float x, y; } kWheelPos[N_Wheel] = {
-    {0.0f,  0.135f},                                    // 轮0 (前)
-    {0.0f, -0.135f},                                    // 轮1 (后)
+    {0.0f,  0.135f},                                                  // 轮0 (前)
+    {0.0f, -0.135f},                                                  // 轮1 (后)
 };
 
 // 速度限幅
-static constexpr float KMaxMoveVelocity     = 0.5f;               // 最大移动线速度 m/s
-static constexpr float KMaxRotationOmega    = 2.0f;               // 最大旋转角速度 rad/s
+static constexpr float KMaxMoveVelocity     = 0.5f;                             // 最大移动线速度 m/s
+static constexpr float KMaxRotationOmega    = 2.0f;                             // 最大旋转角速度 rad/s
 
 // 方向补偿（电机安装方向导致编码器正方向与底盘坐标系相反）
-static constexpr int8_t kSteerSign[N_Wheel] = {-1, -1};   // 舵向
-static constexpr int8_t kDriveSign[N_Wheel] = { 1, -1};   // 行进
+static constexpr int8_t kSteerSign[N_Wheel] = {-1, -1};                 // 舵向
+static constexpr int8_t kDriveSign[N_Wheel] = { 1, -1};                 // 行进
 
 // 功率控制器
-static alg::power_ctrl::PowerCtrl SteerPwrCtrl {};                // 转向组
-static alg::power_ctrl::PowerCtrl DrivePwrCtrl {};                // 行进组
+static alg::power_ctrl::PowerCtrl SteerPwrCtrl {};                              // 转向组
+static alg::power_ctrl::PowerCtrl DrivePwrCtrl {};                              // 行进组
 
 // 运动学中间变量
 static struct { float angle; float velocity; } g_wh_target[N_Wheel] {};
-static float g_k_factor[N_Wheel]     {};                          // 优劣弧方向因子 (±1)
-static float g_steer_target[N_Wheel] {};                          // 优劣弧调整后目标角度
+static float g_k_factor[N_Wheel]     {};                                        // 优劣弧方向因子 (±1)
+static float g_steer_target[N_Wheel] {};                                        // 优劣弧调整后目标角度
 
 // 底盘速度指令
 static float g_vx = 0.0f, g_vy = 0.0f, g_vw = 0.0f;

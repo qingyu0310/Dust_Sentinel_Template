@@ -22,8 +22,7 @@ struct OutputData
     Keyboard keyboard;
 };
 
-// 将解析后的数据发布到 zbus 通道
-inline static void publishOutputData(const OutputData& od, Message& pub)
+inline static void fillOutputData(const OutputData& od, Message& pub)
 {
     pub.chassisy = od.keyboard.w ? 1.0f : od.keyboard.s ? -1.0f : 0.0f;
     pub.chassisx = od.keyboard.a ? 1.0f : od.keyboard.d ? -1.0f : 0.0f;
@@ -42,24 +41,19 @@ inline static void publishOutputData(const OutputData& od, Message& pub)
     pub.supercap_ctrl = od.keyboard.v  ? StartMode::On : StartMode::Off;
 
     pub.version++;
-    zbus_chan_pub(&pub_remote_to, &pub, K_MSEC(1));
 }
 
-// 解码原始遥控器数据 → 返回 false 表示帧错位
-bool dataprocess(uint8_t* buffer, uint8_t len, Message& pub)
+bool validate(const uint8_t* buffer, uint8_t len)
 {
-    if (len < 16) return false;
+    if (len != kFrameSizeVT12) return false;
+    if (buffer[0] != 0xA5) return false;
 
-    //  协议头（6 字节）
-    uint8_t  start_of_frame = buffer[0];
-    // 老裁判系统通用数据，未用上
-    // uint16_t data_length    = (uint16_t)buffer[1] | ((uint16_t)buffer[2] << 8);  
-    // uint8_t  seq            = buffer[3];
-    // uint8_t  crc8           = buffer[4];
-    // uint8_t  cmd_id         = buffer[5];
+    return true;
+}
 
-    // 校验：帧头
-    if (start_of_frame != 0xA5) return false;
+bool decode(const uint8_t* buffer, uint8_t len, Message& pub)
+{
+    if (!validate(buffer, len)) return false;
 
     static KeyboardState keyboard_state_{};
 
@@ -82,17 +76,13 @@ bool dataprocess(uint8_t* buffer, uint8_t len, Message& pub)
     Keyboard cur_raw { .all = static_cast<uint16_t>((uint16_t)buffer[14] | ((uint16_t)buffer[15] << 8)) };
     keyboard_state_.Process(od.keyboard, cur_raw);
 
-    publishOutputData(od, pub);
+    fillOutputData(od, pub);
     return true;
 }
 
+bool dataprocess(const uint8_t* buffer, uint8_t len, Message& pub)
+{
+    return decode(buffer, len, pub);
 }
 
-
-
-
-
-
-
-
-
+}

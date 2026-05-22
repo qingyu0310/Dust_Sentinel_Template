@@ -17,6 +17,8 @@
 namespace dr16 {
     
 static constexpr uint16_t kFrameSizeDR16 = 18;
-bool dataprocess(uint8_t* buffer, uint8_t len, topic::remote_to::Message& pub);
+bool validate(const uint8_t* buffer, uint8_t len);
+bool decode(const uint8_t* buffer, uint8_t len, topic::remote_to::Message& pub);
+bool dataprocess(const uint8_t* buffer, uint8_t len, topic::remote_to::Message& pub);
 
 }

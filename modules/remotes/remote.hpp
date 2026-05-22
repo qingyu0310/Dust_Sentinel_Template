@@ -15,6 +15,7 @@ enum class RemoteType : uint8_t
     DR16 = 0,
     VT12,
     VT13,
+    Auto,
     None,
 };
 

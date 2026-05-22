@@ -37,8 +37,12 @@ struct OutputData
     Keyboard keyboard;
 };
 
-// 将解析后的数据发布到 zbus 通道
-inline static void publishOutputData(const OutputData& od, Message& pub)
+static bool isValidSwitch(uint8_t sw)
+{
+    return sw == SWITCH_UP || sw == SWITCH_MID || sw == SWITCH_DOWN;
+}
+
+inline static void fillOutputData(const OutputData& od, Message& pub)
 {
     processChannel(pub, od);
 
@@ -74,25 +78,35 @@ inline static void publishOutputData(const OutputData& od, Message& pub)
     }
 
     pub.version++;
-
-    zbus_chan_pub(&pub_remote_to, &pub, K_MSEC(1));
 }
 
-//  解码 + 校验 → 返回 false 表示帧错位
-bool dataprocess(uint8_t* buffer, uint8_t len, Message& pub)
+bool validate(const uint8_t* buffer, uint8_t len)
 {
-    if (len < 15) return false;
+    if (len != kFrameSizeDR16) return false;
 
     uint16_t ch0 = ( buffer[0]       | (buffer[1] << 8)) & 0x07FF;
     uint16_t ch1 = ((buffer[1] >> 3) | (buffer[2] << 5)) & 0x07FF;
     uint16_t ch2 = ((buffer[2] >> 6) | (buffer[3] << 2)  | (buffer[4] << 10)) & 0x07FF;
     uint16_t ch3 = ((buffer[4] >> 1) | (buffer[5] << 7)) & 0x07FF;
 
-    // 校验：摇杆通道超出范围 → 拼帧错位
-
     if (ch0 < 364 || ch0 > 1684 || ch1 < 364 || ch1 > 1684 || ch2 < 364 || ch2 > 1684 || ch3 < 364 || ch3 > 1684) {
         return false;
     }
+
+    uint8_t sw1 = ((buffer[5] >> 4) & 0x0C) >> 2;
+    uint8_t sw2 = ((buffer[5] >> 4) & 0x03);
+
+    return isValidSwitch(sw1) && isValidSwitch(sw2);
+}
+
+bool decode(const uint8_t* buffer, uint8_t len, Message& pub)
+{
+    if (!validate(buffer, len)) return false;
+
+    uint16_t ch0 = ( buffer[0]       | (buffer[1] << 8)) & 0x07FF;
+    uint16_t ch1 = ((buffer[1] >> 3) | (buffer[2] << 5)) & 0x07FF;
+    uint16_t ch2 = ((buffer[2] >> 6) | (buffer[3] << 2)  | (buffer[4] << 10)) & 0x07FF;
+    uint16_t ch3 = ((buffer[4] >> 1) | (buffer[5] << 7)) & 0x07FF;
 
     static KeyboardState keyboard_state_{};
 
@@ -100,8 +114,6 @@ bool dataprocess(uint8_t* buffer, uint8_t len, Message& pub)
 
     od.sw.sw1    = ((buffer[5] >> 4) & 0x0C) >> 2;
     od.sw.sw2    = ((buffer[5] >> 4) & 0x03);
-    
-    if (od.sw.sw1 > 3 || od.sw.sw2 > 3) return false;
 
     int16_t dx   = buffer[6]  | (buffer[7] << 8);
     int16_t dy   = buffer[8]  | (buffer[9] << 8);
@@ -129,9 +141,14 @@ bool dataprocess(uint8_t* buffer, uint8_t len, Message& pub)
     Keyboard cur_raw { .all = buffer[14] };
     keyboard_state_.Process(od.keyboard, cur_raw);
 
-    publishOutputData(od, pub);
+    fillOutputData(od, pub);
 
     return true;
+}
+
+bool dataprocess(const uint8_t* buffer, uint8_t len, Message& pub)
+{
+    return decode(buffer, len, pub);
 }
 
 }
