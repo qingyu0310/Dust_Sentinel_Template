@@ -23,6 +23,9 @@
 #ifdef CONFIG_TRD_REMOTE
 #include "remote.hpp"
 #endif
+#ifdef CONFIG_TRD_IMU
+#include "imu.hpp"
+#endif
 #ifdef CONFIG_TRD_TFLM
 #include "trd_tflm.hpp"
 #endif
@@ -49,6 +52,9 @@ void System_Modules_Init()
 #ifdef CONFIG_TRD_REMOTE
     remote ::thread_init();
 #endif
+#ifdef CONFIG_TRD_IMU
+    imu    ::thread_init();
+#endif
 #ifdef CONFIG_TRD_TFLM
     ml     ::thread_init();
 #endif
@@ -58,6 +64,9 @@ void System_Thread_Start()
 {
 #ifdef CONFIG_TRD_REMOTE
     remote  ::thread_start(4);
+#endif
+#ifdef CONFIG_TRD_IMU
+    imu     ::thread_start(4);
 #endif
 #ifdef CONFIG_TRD_CAN_TX
     can     ::thread_start(4);

@@ -23,6 +23,25 @@ config FLT_LPF
     help
         一阶低通滤波器
 
+config FLT_HPF
+    bool "信号滤波器"
+    default n
+    help
+        一阶高通滤波器
+
+config FLT_KALMAN
+    bool "Kalman filter"
+    default n
+    help
+        Generic matrix-based Kalman filter core.
+
+config FLT_QUATERNION_EKF
+    bool "Quaternion EKF"
+    default n
+    select FLT_KALMAN
+    help
+        Quaternion attitude EKF built on the generic Kalman filter core.
+
 config ID_RLS
     bool "递归最小二乘法"
     default n
@@ -37,5 +56,4 @@ config MOD_CTL_POWER
     select FLT_LPF
     help
         电机功率控制，包含功率模型预测/RLS参数辨识/隶属度分配/受限力矩求解
-
 

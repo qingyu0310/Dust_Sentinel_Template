@@ -11,8 +11,7 @@ rsource "../../cmd/shell/Kconfig"
 config TRD_GPIO
     bool "GPIO thread task"
     default y
-    # select DEV_GPIO
-    select MOD_DEV_WS2812B
+    select DEV_GPIO
     select CTL_TIMER
     help
       Enable the GPIO/output indicator thread.
@@ -21,7 +20,7 @@ config TRD_GPIO
 
 config TRD_CHASSIS
     bool "Chassis control thread"
-    default y
+    default n
     select MOD_CTL_POWER
     select MOD_DEV_MOTOR_DJI
     select TPC_TO_CAN_TX
@@ -53,7 +52,7 @@ config TRD_GIMBAL
 
 config TRD_CAN_TX
     bool "CAN TX thread"
-    default y
+    default n
     select COM_CAN
     select TPC_TO_CAN_TX
     help
@@ -63,10 +62,20 @@ config TRD_CAN_TX
 
 config TRD_REMOTE
     bool "Remote thread"
-    default y
+    default n
     select MOD_DEV_REMOTE
     help
       Enable remote receiver thread.
+
+######################################################
+
+config TRD_IMU
+    bool "IMU thread"
+    default y
+    select MOD_DEV_IMU
+    select TPC_IMU_TO
+    help
+      Enable IMU acquisition and publish thread.
 
 ######################################################
 

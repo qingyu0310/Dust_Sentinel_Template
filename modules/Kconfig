@@ -1,39 +1,48 @@
-# modules/Kconfig — 硬件模块驱动
-# 提供电机（大疆/达妙）、功率计、遥控器等具体设备的驱动
-# 依赖 drivers/ 中的通信驱动（CAN/UART）和数据通道（topic/）
-# 头文件在 modules/ 下
+# modules/Kconfig - hardware-facing modules built on top of drivers/topics
+
 config MOD_DEV_POWERMETER
-    bool "Horizon 功率计"
+    bool "Horizon power meter"
     default n
     select COM_CAN
     help
-        Horizon 功率计
+        Horizon power meter module.
 
 config MOD_DEV_MOTOR_DJI
-    bool "大疆电机"
+    bool "DJI motor"
     default n
     select COM_CAN
     help
-        大疆电机
+        DJI motor module.
 
 config MOD_DEV_MOTOR_DM
-    bool "达妙电机"
+    bool "DM motor"
     default n
     select COM_CAN
     help
-        达妙电机
+        DM motor module.
 
 config MOD_DEV_REMOTE
-    bool "遥控器"
+    bool "Remote receiver"
     default n
     select COM_UART_DMA
     select TPC_REMOTE_TO
     help
-        遥控器
+        Remote receiver module.
 
-config MOD_DEV_WS2812B
-    bool "WS2812B LED"
+config MOD_DEV_IMU
+    bool "IMU module"
     default n
-    select DEV_GPIO
+    select FLT_QUATERNION_EKF
+    select TPC_IMU_TO
     help
-        WS2812B addressable RGB LED.
+        IMU source decoupling, attitude EKF and zbus publish layer.
+
+config MOD_DEV_IMU_BMI088
+    bool "BMI088 IMU source"
+    default n
+    depends on MOD_DEV_IMU
+    select COM_SPI
+    help
+        BMI088 source implementation for the IMU module.
+
+

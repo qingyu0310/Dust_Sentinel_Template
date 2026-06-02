@@ -5,6 +5,7 @@
 	aliases {
 		user-can1 =  &mcan0;
 		uart-remote = &uart4;
+		imu-spi = &imu_spi;
 	};
 
 	chosen {
@@ -18,6 +19,12 @@
 
 &gpioa {
 	pinctrl-0 = <&pinmux_gpioa>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpiob {
+	pinctrl-0 = <&pinmux_gpiob_spi>;
 	pinctrl-names = "default";
 	status = "okay";
 };
@@ -49,11 +56,48 @@
 	status = "okay";
 };
 
+&spi2 {
+	pinctrl-0 = <&pinmux_spi2_local>;
+	pinctrl-names = "default";
+	clocks = <&clk CLOCK_SPI2 CLK_SRC_PLL1_CLK0 10>;
+	cs-gpios = <&gpiob 10 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	imu_spi: imu@0 {
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+		int-gpios = <&gpiob 15 GPIO_ACTIVE_HIGH>;
+		int2-gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+};
+
 &pinctrl {
+	pinmux_gpiob_spi: pinmux_gpiob_spi {
+		group0 {
+			pinmux = <HPMICRO_PINMUX(HPMICRO_PIN(HPMICRO_PORTB, 10), IOC_TYPE_IOC, 0, 0)>;
+		};
+
+		group1 {
+			pinmux = <HPMICRO_PINMUX(HPMICRO_PIN(HPMICRO_PORTB, 14), IOC_TYPE_IOC, 0, 0)>,
+				 <HPMICRO_PINMUX(HPMICRO_PIN(HPMICRO_PORTB, 15), IOC_TYPE_IOC, 0, 0)>;
+			input-enable;
+		};
+	};
+
 	pinmux_mcan0_txrx_local: pinmux_mcan0_txrx_local {
 		group0 {
 			pinmux = <HPMICRO_PINMUX(HPMICRO_PIN(HPMICRO_PORTB, 0), IOC_TYPE_IOC, 0, 7)>,
 				 <HPMICRO_PINMUX(HPMICRO_PIN(HPMICRO_PORTB, 1), IOC_TYPE_IOC, 0, 7)>;
+		};
+	};
+
+	pinmux_spi2_local: pinmux_spi2_local {
+		group0 {
+			pinmux = <HPMICRO_PINMUX(HPMICRO_PIN(HPMICRO_PORTB, 11), IOC_TYPE_IOC, 0, 5)>,
+				 <HPMICRO_PINMUX(HPMICRO_PIN(HPMICRO_PORTB, 12), IOC_TYPE_IOC, 0, 5)>,
+				 <HPMICRO_PINMUX(HPMICRO_PIN(HPMICRO_PORTB, 13), IOC_TYPE_IOC, 0, 5)>;
+			input-enable;
 		};
 	};
 
