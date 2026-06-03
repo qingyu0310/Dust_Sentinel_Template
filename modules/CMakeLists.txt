@@ -40,3 +40,11 @@ if(CONFIG_MOD_DEV_IMU_BMI088)
 		${CMAKE_CURRENT_SOURCE_DIR}/imu/bmi088
 	)
 endif()
+
+if(CONFIG_MOD_DEV_IMU_ICM42688P)
+	target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/imu/icm42688p/icm42688p.cpp)
+	target_include_directories(app PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/imu
+		${CMAKE_CURRENT_SOURCE_DIR}/imu/icm42688p
+	)
+endif()

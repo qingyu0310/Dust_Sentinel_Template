@@ -45,4 +45,11 @@ config MOD_DEV_IMU_BMI088
     help
         BMI088 source implementation for the IMU module.
 
+config MOD_DEV_IMU_ICM42688P
+    bool "ICM42688P IMU source"
+    default n
+    depends on MOD_DEV_IMU
+    select COM_SPI
+    help
+        ICM42688P source implementation for the IMU module.
 

@@ -10,6 +10,7 @@
  */
 
 #include "quaternion_ekf.hpp"
+#include "imu.hpp"
 
 #include <math.h>
 #include <string.h>
@@ -63,11 +64,6 @@ static void SyncLegacyExports(const QuaternionEkf::State& state)
     ::ChiSquareTestThreshold = state.ChiSquareTestThreshold;
 }
 
-QuaternionEkf::QuaternionEkf()
-{
-    filter::MatrixInit(&chi_square_matrix_, 1, 1, chi_square_data_);
-}
-
 void QuaternionEkf::Init(const Config& config)
 {
     config_ = config;
@@ -111,21 +107,21 @@ void QuaternionEkf::Init(const Config& config)
     SyncLegacyExports(state_);
 }
 
-void QuaternionEkf::Update(float gx, float gy, float gz, float ax, float ay, float az, float dt)
+void QuaternionEkf::Update(const Sample& sample)
 {
     if (!state_.Initialized) {
         Init(Config{});
     }
 
-    state_.dt = dt;
+    state_.dt = sample.dt;
 
-    state_.Gyro[0] = gx - state_.GyroBias[0];
-    state_.Gyro[1] = gy - state_.GyroBias[1];
-    state_.Gyro[2] = gz - state_.GyroBias[2];
+    state_.Gyro[0] = sample.gyro[0] - state_.GyroBias[0];
+    state_.Gyro[1] = sample.gyro[1] - state_.GyroBias[1];
+    state_.Gyro[2] = sample.gyro[2] - state_.GyroBias[2];
 
-    const float half_gx_dt = 0.5f * state_.Gyro[0] * dt;
-    const float half_gy_dt = 0.5f * state_.Gyro[1] * dt;
-    const float half_gz_dt = 0.5f * state_.Gyro[2] * dt;
+    const float half_gx_dt = 0.5f * state_.Gyro[0] * state_.dt;
+    const float half_gy_dt = 0.5f * state_.Gyro[1] * state_.dt;
+    const float half_gz_dt = 0.5f * state_.Gyro[2] * state_.dt;
 
     /*
      * 四元数一阶离散化：
@@ -147,21 +143,21 @@ void QuaternionEkf::Update(float gx, float gy, float gz, float ax, float ay, flo
     filter_.F_data[20] = -half_gx_dt;
 
     if (state_.UpdateCount == 0) {
-        state_.Accel[0] = ax;
-        state_.Accel[1] = ay;
-        state_.Accel[2] = az;
+        state_.Accel[0] = sample.accel[0];
+        state_.Accel[1] = sample.accel[1];
+        state_.Accel[2] = sample.accel[2];
     }
 
     /* 对加速度做一阶低通，减小机械振动和采样尖峰对重力方向观测的影响。 */
     const float accel_filter_den = state_.dt + state_.accLPFcoef;
     if (accel_filter_den > 0.0f) {
-        state_.Accel[0] = state_.Accel[0] * state_.accLPFcoef / accel_filter_den + ax * state_.dt / accel_filter_den;
-        state_.Accel[1] = state_.Accel[1] * state_.accLPFcoef / accel_filter_den + ay * state_.dt / accel_filter_den;
-        state_.Accel[2] = state_.Accel[2] * state_.accLPFcoef / accel_filter_den + az * state_.dt / accel_filter_den;
+        state_.Accel[0] = state_.Accel[0] * state_.accLPFcoef / accel_filter_den + sample.accel[0] * state_.dt / accel_filter_den;
+        state_.Accel[1] = state_.Accel[1] * state_.accLPFcoef / accel_filter_den + sample.accel[1] * state_.dt / accel_filter_den;
+        state_.Accel[2] = state_.Accel[2] * state_.accLPFcoef / accel_filter_den + sample.accel[2] * state_.dt / accel_filter_den;
     } else {
-        state_.Accel[0] = ax;
-        state_.Accel[1] = ay;
-        state_.Accel[2] = az;
+        state_.Accel[0] = sample.accel[0];
+        state_.Accel[1] = sample.accel[1];
+        state_.Accel[2] = sample.accel[2];
     }
 
     const float accel_inv_norm = FastInverseSqrt(state_.Accel[0] * state_.Accel[0] + state_.Accel[1] * state_.Accel[1] +
@@ -209,6 +205,9 @@ void QuaternionEkf::Update(float gx, float gy, float gz, float ax, float ay, flo
     state_.GyroBias[0] = filter_.FilteredValue[4];
     state_.GyroBias[1] = filter_.FilteredValue[5];
     state_.GyroBias[2] = 0.0f;
+    state_.Gyro[0] = sample.gyro[0] - state_.GyroBias[0];
+    state_.Gyro[1] = sample.gyro[1] - state_.GyroBias[1];
+    state_.Gyro[2] = sample.gyro[2] - state_.GyroBias[2];
 
     /*
      * Export standard ZYX Euler angles:
@@ -570,8 +569,7 @@ QEKF_INS_t QEKF_INS {};
 float      chiSquare = 0.0f;
 float      ChiSquareTestThreshold = 0.0f;
 
-void IMU_QuaternionEKF_Init(float process_noise1, float process_noise2,
-                            float measure_noise, float lambda, float lpf)
+void IMU_QuaternionEKF_Init(float process_noise1, float process_noise2, float measure_noise, float lambda, float lpf)
 {
     alg::attitude::QuaternionEkf::Config config {};
     config.process_noise_quaternion = process_noise1;
@@ -587,6 +585,15 @@ void IMU_QuaternionEKF_Init(float process_noise1, float process_noise2,
 void IMU_QuaternionEKF_Update(float gx, float gy, float gz,
                               float ax, float ay, float az, float dt)
 {
+    Sample sample {};
+    sample.gyro[0] = gx;
+    sample.gyro[1] = gy;
+    sample.gyro[2] = gz;
+    sample.accel[0] = ax;
+    sample.accel[1] = ay;
+    sample.accel[2] = az;
+    sample.dt = dt;
+
     auto& ekf = alg::attitude::GlobalQuaternionEkf();
-    ekf.Update(gx, gy, gz, ax, ay, az, dt);
+    ekf.Update(sample);
 }

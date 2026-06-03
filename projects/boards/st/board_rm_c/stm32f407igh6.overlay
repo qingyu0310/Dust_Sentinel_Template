@@ -3,11 +3,10 @@
 
 / {
 	aliases {
-		user-can1 = &can1;
-		uart-remote = &usart3;
-		imu-spi = &spi1;
+		user-can1    = &can1;
+		uart-remote  = &usart3;
 		bmi088-accel = &bmi088_accel;
-		bmi088-gyro = &bmi088_gyro;
+		bmi088-gyro  = &bmi088_gyro;
 	};
 	chosen {
 		zephyr,console = &usart6;

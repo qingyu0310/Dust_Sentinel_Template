@@ -15,6 +15,8 @@
 
 #include <stdint.h>
 
+struct Sample;
+
 namespace alg::attitude {
 
 /**
@@ -94,15 +96,17 @@ public:
         float   YawAngleLast  = 0.0f;
     };
 
-    QuaternionEkf();
+    QuaternionEkf() {
+        filter::MatrixInit(&chi_square_matrix_, 1, 1, chi_square_data_);
+    };
 
     void Init(const Config& config);
-    void Update(float gx, float gy, float gz, float ax, float ay, float az, float dt);
+    void Update(const Sample& sample);
 
     const State& GetState() const { return state_; }
-    State& GetState() { return state_; }
-    filter::KalmanFilter& Filter() { return filter_; }
+    State&       GetState() { return state_; }
     const filter::KalmanFilter& Filter() const { return filter_; }
+    filter::KalmanFilter&       Filter() { return filter_; }
 
 private:
     static constexpr uint8_t kStateSize       = 6;

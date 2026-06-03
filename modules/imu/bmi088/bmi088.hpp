@@ -1,14 +1,14 @@
 /**
  * @file bmi088.hpp
  * @author qingyu
- * @brief BMI088 IMU Source 接口与配置定义。
+ * @brief BMI088 IMU Source 接口与配置定义
  * @version 0.1
  * @date 2026-06-02
  */
 
 #pragma once
 
-#include "imu.hpp"
+#include "imu_source_base.hpp"
 #include "spi.hpp"
 
 #include <cstdint>
@@ -16,6 +16,9 @@
 
 namespace bmi088 {
 
+/**
+ * @brief BMI088 驱动错误类型
+ */
 enum class Error : uint8_t
 {
     None = 0,
@@ -28,89 +31,63 @@ enum class Error : uint8_t
     ReadFailed,
 };
 
-class Bmi088 final : public Source
+/**
+ * @brief BMI088 数据源实现
+ *
+ * BMI088 由 accel/gyro 两个 SPI 设备组成：
+ * - 子类负责底层寄存器访问与初始化
+ * - 公共工程量转换、校准与读样流程由基类复用
+ */
+class Bmi088 final : public CalibratedImuSource
 {
 public:
     /**
-     * @brief BMI088 原始寄存器样本。
-     *
-     * 这里保留传感器原始计数值，供校准和工程量换算共用。
-     */
-    struct RawSample {
-        int16_t gyro[3]  = {0, 0, 0};
-        int16_t accel[3] = {0, 0, 0};
-        int16_t temperature = 0;
-    };
-
-    /**
-     * @brief 传感器静态校准参数。
-     */
-    struct Calibration {
-        float gyro_offset[3]  = {0.0f, 0.0f, 0.0f};
-        float gyro_scale[3]   = {1.0f, 1.0f, 1.0f};
-        float accel_offset[3] = {0.0f, 0.0f, 0.0f};
-        float accel_scale[3]  = {1.0f, 1.0f, 1.0f};
-    };
-
-    /**
-     * @brief BMI088 Source 运行配置。
+     * @brief BMI088 运行时配置
      */
     struct Config {
         const struct spi_dt_spec *accel = nullptr;
-        const struct spi_dt_spec *gyro  = nullptr;
-        Calibration static_calibration {};
-        uint32_t period_ms = 1;
-        bool auto_calibration = true;
-        uint16_t calibration_samples = 200;
-        uint32_t calibration_settle_ms = 50;
+        const struct spi_dt_spec *gyro = nullptr;
+        ImuCommonConfig common {};
     };
 
-    Bmi088() = default;
-    explicit Bmi088(const Config& config);
-
     /**
-     * @brief 更新当前 BMI088 配置。
+     * @brief 更新当前 BMI088 配置
      */
     void Configure(const Config& config);
 
     /**
-     * @brief 初始化 BMI088 加速度计、陀螺仪和可选自动校准。
+     * @brief 初始化 BMI088 两个子器件并按需执行自动标定
      */
     bool Init() override;
 
     /**
-     * @brief 读取并输出一帧工程单位样本。
+     * @brief 返回最近一次驱动错误码
      */
-    bool Read(Sample& sample) override;
-
-    /**
-     * @brief 读取一帧 BMI088 原始寄存器样本。
-     */
-    bool ReadRaw(RawSample& raw);
-    uint32_t PeriodMs() const override;
     Error LastError() const;
 
 private:
-    static constexpr float kAccel6gSensitivity  = 0.00179443359375f;
+    static constexpr float kAccel6gSensitivity = 0.00179443359375f;
     static constexpr float kGyro2000Sensitivity = 0.0010652644360316953f;
-    static constexpr float kTemperatureFactor   = 0.125f;
-    static constexpr float kTemperatureOffset   = 23.0f;
+    static constexpr float kTemperatureFactor = 0.125f;
+    static constexpr float kTemperatureOffset = 23.0f;
     static constexpr float kGravity = 9.8f;
 
-    bool InitAccel();
-    bool InitGyro();
-    bool AutoCalibrate();
-    bool WriteAccel(uint8_t addr, uint8_t value);
-    bool WriteGyro(uint8_t addr, uint8_t value);
-    bool ReadAccel(uint8_t addr, uint8_t *data, uint32_t len);
-    bool ReadGyro(uint8_t addr, uint8_t *data, uint32_t len);
-    bool ReadAccelReg(uint8_t addr, uint8_t& value);
-    bool ReadGyroReg(uint8_t addr, uint8_t& value);
-    bool WriteCheckedAccel(uint8_t addr, uint8_t value);
-    bool WriteCheckedGyro(uint8_t addr, uint8_t value);
-
-    static int16_t ToInt16(uint8_t low, uint8_t high);
-    static float Correct(float value, float offset, float scale);
+    bool  InitAccel          ();
+    bool  InitGyro           ();
+    bool  AutoCalibrate      ();
+    bool  ReadRaw            (ImuRawSample& raw) override;
+    bool  WriteAccel         (uint8_t addr, uint8_t  value);
+    bool  WriteGyro          (uint8_t addr, uint8_t  value);
+    bool  ReadAccel          (uint8_t addr, uint8_t  *data, uint32_t len);
+    bool  ReadGyro           (uint8_t addr, uint8_t  *data, uint32_t len);
+    bool  ReadAccelReg       (uint8_t addr, uint8_t& value);
+    bool  ReadGyroReg        (uint8_t addr, uint8_t& value);
+    bool  WriteCheckedAccel  (uint8_t addr, uint8_t  value);
+    bool  WriteCheckedGyro   (uint8_t addr, uint8_t  value);
+    float ConvertAccel       (int16_t raw) const override;
+    float ConvertGyro        (int16_t raw) const override;
+    float ConvertTemperature (int16_t raw) const override;
+    void  SleepMs            (uint32_t ms) const override;
 
     Config config_ {};
     Spi accel_ {};
@@ -120,20 +97,13 @@ private:
     uint8_t rx_[8] {};
 };
 
+/**
+ * @brief 返回 BMI088 单例数据源
+ */
 Bmi088& Instance();
 
 /**
- * @brief 使用给定配置注册 BMI088 Source。
- */
-bool Register(const Bmi088::Config& config);
-
-/**
- * @brief 根据设备树 alias 配置 BMI088 Source。
- */
-bool ConfigureFromDevicetree(uint32_t period_ms = 1, bool auto_calibration = true);
-
-/**
- * @brief 根据设备树 alias 配置并注册 BMI088 Source。
+ * @brief 根据 devicetree alias 构造 BMI088 配置
  */
 bool RegisterFromDevicetree(uint32_t period_ms = 1, bool auto_calibration = true);
 
