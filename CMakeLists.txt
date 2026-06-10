@@ -37,7 +37,10 @@ if(PRJ_CONF_FILES)
   list(POP_FRONT PRJ_CONF_FILES EXTRA_CONF_FILE)
 endif()
 
-set(ZEPHYR_EXTRA_MODULES "${SDK_GLUE_DIR}")
+set(ZEPHYR_EXTRA_MODULES
+  "${SDK_GLUE_DIR}"
+  "D:/Zephyr_HPMicro/modules/lib/CherryUSB"
+)
 set(ZEPHYR_SDK_INSTALL_DIR "D:/Zephyr/zephyr-sdk-0.16.8" CACHE PATH "")
 
 # 加载板级烧录脚本（flash.sh 等）

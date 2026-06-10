@@ -33,11 +33,12 @@ static void Task(void*, void*, void*)
     {
         const int64_t tick_start = k_uptime_get();
 
-        // timer.Update();
+        timer.Update();
 
-        // timer.Clock(([](){
-        //     led_alert.Toggle();
-        // }));
+        timer.Clock(([](){
+            printk("tick\n");
+        }));
+
 
         const int64_t elapsed = k_uptime_get() - tick_start;
         const int64_t remain  = static_cast<int64_t>(kPeriodMs) - elapsed;

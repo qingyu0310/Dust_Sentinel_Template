@@ -5,7 +5,7 @@
 
 / {
 	aliases {
-		user-can1 =  &mcan0;
+		user-can1   = &mcan0;
 		uart-remote = &uart4;
 		spi-imu = &icm42688p;
 		imu-pwm = &imu_pwm;
@@ -66,6 +66,12 @@
 	pinctrl-names = "default";
 	dmas = <&hdma 4 0x1A>, <&hdma 5 0x1B>;
 	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+cherryusb_usb0: &usb0 {
+	compatible = "hpmicro,hpm-cherryusb";
+	clk-name = <CLOCK_USB0>;
 	status = "okay";
 };
 

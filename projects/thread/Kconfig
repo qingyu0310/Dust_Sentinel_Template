@@ -71,7 +71,7 @@ config TRD_REMOTE
 
 config TRD_IMU
     bool "IMU thread"
-    default y
+    default n
     select MOD_DEV_IMU
     select TPC_IMU_TO
     help
@@ -88,9 +88,24 @@ config TRD_TFLM
 
 ######################################################
 
+config TRD_TEST
+    bool "Test thread"
+    default y
+    help
+      Temporary user test thread.
+
+config TRD_TEST_CHERRYUSB
+    bool "Run official CherryUSB CDC ACM test"
+    default y
+    depends on TRD_TEST
+    help
+      Use the official HPMicro CherryUSB CDC ACM device sample in the test thread.
+
 config USER_TEST_ADD
     bool "User test add config"
     default y
     select COM_RS485
     help
       Temporary user test switch.
+
+######################################################
