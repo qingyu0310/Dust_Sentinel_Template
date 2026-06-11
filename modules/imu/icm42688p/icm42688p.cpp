@@ -59,7 +59,7 @@ bool RegisterFromDevicetree(uint32_t period_ms)
 {
     constexpr uint32_t kSpiOperation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB | SPI_MODE_CPOL | SPI_MODE_CPHA;
 
-    static const struct spi_dt_spec imu = SPI_DT_SPEC_GET(DT_ALIAS(spi_imu), kSpiOperation, 0);
+    static const struct spi_dt_spec imu = SPI_DT_SPEC_GET(DT_ALIAS(imu_spi), kSpiOperation, 0);
 
     Icm42688p::Config cfg {};
     cfg.spi = &imu;

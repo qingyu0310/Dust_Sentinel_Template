@@ -7,8 +7,8 @@
 
 当前已经验证成功的是 **HPMicro 官方 Zephyr CherryUSB CDC ACM sample 路径移植版**：
 
-- 应用入口：`projects/thread/test/trd_test.cpp`
-- 开关：`CONFIG_TRD_TEST_CHERRYUSB=y`
+- 应用入口：`projects/thread/pc/trd_pc.cpp`
+- 开关：`CONFIG_TRD_PC_CHERRYUSB=y`
 - HPM CherryUSB 设备驱动节点：`projects/boards/hpm/hpm5361icb/hpm5361icb.overlay` 中的 `cherryusb_usb0: &usb0`
 - CherryUSB 配置头：`D:/Zephyr_HPMicro/sdk_glue/samples/cherryusb/config/usb_config.h`
 - 主机侧结果：Windows 已出现虚拟串口
@@ -55,8 +55,7 @@ CONFIG_CHERRYUSB_DEVICE_CDC_ACM=y
 本工程移植后的关键配置：
 
 ```conf
-CONFIG_COM_USB=n
-CONFIG_TRD_TEST_CHERRYUSB=y
+CONFIG_TRD_PC_CHERRYUSB=y
 CONFIG_CHERRYUSB=y
 CONFIG_CHERRYUSB_DEVICE=y
 CONFIG_CHERRYUSB_DEVICE_SPEED_AUTO=y
@@ -90,11 +89,11 @@ DT_REG_ADDR(DT_NODELABEL(cherryusb_usb0))
 
 ### 2. 之前不枚举版本：Zephyr CDC ACM UART 路径
 
-旧路径在当前文件中还保留在 `#elif defined(CONFIG_COM_USB)` 分支：
+旧路径删除前位于 `projects/thread/pc/trd_pc.cpp` 的 `#elif defined(CONFIG_COM_USB)` 分支：
 
 ```text
 CONFIG_COM_USB
--> drivers/communication/usb/usb.cpp
+-> drivers/communication/usb/usb.cpp（已删除）
 -> UsbUart
 -> DEVICE_DT_GET(DT_ALIAS(pc_usb))
 -> uart_poll_out / uart_irq_rx_enable
@@ -125,7 +124,7 @@ config COM_USB
 
 ```text
 CONFIG_COM_USB=y
--> drivers/communication/usb/usb.cpp
+-> drivers/communication/usb/usb.cpp（已删除）
 -> UsbUart::Init()
 -> DEVICE_DT_GET(DT_ALIAS(pc_usb))
 -> zephyr,cdc-acm-uart
@@ -171,7 +170,7 @@ cherryusb_usb0: &usb0 {
 };
 ```
 
-也就是说，同一个 `usb0` 不能同时按旧版 UDC 和新版 CherryUSB 两种 compatible 路径跑。当前 overlay 已经切到 `hpmicro,hpm-cherryusb`，所以 `CONFIG_COM_USB` 分支即使代码还在，也不是当前实际枚举路径。
+也就是说，同一个 `usb0` 不能同时按旧版 UDC 和新版 CherryUSB 两种 compatible 路径跑。当前 overlay 已经切到 `hpmicro,hpm-cherryusb`，旧 `CONFIG_COM_USB` 分支也已经删除。
 
 旧版调试中遇到的具体问题如下。
 

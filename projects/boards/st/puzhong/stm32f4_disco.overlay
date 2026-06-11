@@ -3,7 +3,7 @@
 / {
 	aliases {
 		user-can1 = &can1;
-		uart-remote = &usart1;
+		remote-uart = &usart1;
 	};
 	leds {
 		compatible = "gpio-leds";

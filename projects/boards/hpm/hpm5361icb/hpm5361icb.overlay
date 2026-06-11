@@ -6,9 +6,10 @@
 / {
 	aliases {
 		user-can1   = &mcan0;
-		uart-remote = &uart4;
-		spi-imu = &icm42688p;
-		imu-pwm = &imu_pwm;
+		remote-uart = &uart4;
+		imu-spi 	= &icm42688p;
+		imu-pwm 	= &imu_pwm;
+		pc-usb		= &cherryusb_usb0;
 	};
 
 	chosen {

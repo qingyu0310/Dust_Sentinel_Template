@@ -25,7 +25,6 @@
             "executable": "${workspaceFolder}/build/zephyr/zephyr.elf",
             "serverpath": "D:/Zephyr_HPMicro/sdk_env/tools/openocd_backup/openocd.exe",
             "gdbPath": "D:/Zephyr/zephyr-sdk-0.16.8/riscv64-zephyr-elf/bin/riscv64-zephyr-elf-gdb.exe",
-            "runToEntryPoint": "main",
             "showDevDebugOutput": "none",
             "configFiles": [
                 "D:/Zephyr_HPMicro/sdk_env/hpm_sdk/boards/openocd/probes/cmsis_dap.cfg",

@@ -35,8 +35,8 @@
 #include "trd_tflm.hpp"
 #endif
 
-#ifdef CONFIG_TRD_TEST
-#include "trd_test.hpp"
+#ifdef CONFIG_TRD_PC
+#include "trd_pc.hpp"
 #endif
 
 using namespace thread;
@@ -85,9 +85,9 @@ void System_Modules_Init()
 }
 #endif
 
-#ifdef CONFIG_TRD_TEST
+#ifdef CONFIG_TRD_PC
 {
-    test   ::thread_init();
+    pc      ::thread_init();
 }
 #endif
 }
@@ -132,9 +132,9 @@ void System_Thread_Start()
 }
 #endif
 
-#ifdef CONFIG_TRD_TEST
+#ifdef CONFIG_TRD_PC
 {
-    test    ::thread_start(6);
+    pc      ::thread_start(6);
 }
 #endif
 }

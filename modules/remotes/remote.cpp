@@ -161,7 +161,7 @@ void thread_init()
     cfg.buf_size   = kBufferSize;
     cfg.rx_timeout = kTimeour;
 
-    if (!rx.Init(DEVICE_DT_GET(DT_ALIAS(uart_remote)), cfg)) {
+    if (!rx.Init(DEVICE_DT_GET(DT_ALIAS(remote_uart)), cfg)) {
         remote_ready_ = false;
         return;
     }

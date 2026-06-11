@@ -88,18 +88,14 @@ config TRD_TFLM
 
 ######################################################
 
-config TRD_TEST
-    bool "Test thread"
+config TRD_PC
+    bool "PC communication thread"
     default y
+    select COM_USB
     help
-      Temporary user test thread.
+      PC communication thread (USB CDC ACM loopback test).
 
-config TRD_TEST_CHERRYUSB
-    bool "Run official CherryUSB CDC ACM test"
-    default y
-    depends on TRD_TEST
-    help
-      Use the official HPMicro CherryUSB CDC ACM device sample in the test thread.
+######################################################
 
 config USER_TEST_ADD
     bool "User test add config"

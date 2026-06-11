@@ -38,16 +38,12 @@ if(CONFIG_TRD_TFLM)
 	)
 endif()
 
-if(CONFIG_TRD_TEST)
+if(CONFIG_TRD_PC)
 	target_sources(app PRIVATE
-		${CMAKE_CURRENT_SOURCE_DIR}/test/trd_test.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/pc/trd_pc.cpp
 	)
 	target_include_directories(app PRIVATE
 		${CMAKE_CURRENT_SOURCE_DIR}
-		${CMAKE_CURRENT_SOURCE_DIR}/test
+		${CMAKE_CURRENT_SOURCE_DIR}/pc
 	)
-endif()
-
-if(CONFIG_TRD_TEST_CHERRYUSB)
-	zephyr_include_directories(${SDK_GLUE_DIR}/samples/cherryusb/config)
 endif()
