@@ -24,11 +24,11 @@
 #endif
 
 #ifdef CONFIG_TRD_REMOTE
-#include "remote.hpp"
+#include "trd_remote.hpp"
 #endif
 
 #ifdef CONFIG_TRD_IMU
-#include "imu.hpp"
+#include "trd_imu.hpp"
 #endif
 
 #ifdef CONFIG_TRD_TFLM

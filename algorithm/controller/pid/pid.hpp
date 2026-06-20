@@ -1,8 +1,7 @@
 /**
  * @file pid.hpp
  * @author qingyu
- * @brief Positional PID controller with D-first, integral separation,
- *        variable integral speed, and D-term LPF
+ * @brief 位置式 PID 控制器（D 先行 / 变速积分 / 积分分离 / D 项 LPF）
  * @version 0.1
  * @date 2026-04-29
  *
@@ -15,26 +14,26 @@
 
 namespace alg::pid {
 
-/// Derivative-on-measurement mode (avoids derivative kick on target change)
+/// 微分先行模式（避免目标值突变引起的微分冲击）
 enum class DFirst : uint8_t {
-    Disable = 0,  ///< D on error
-    Enable,       ///< D on measurement (recommended for setpoint tracking)
+    Disable = 0,  // D 作用于误差
+    Enable,       // D 作用于测量值（推荐用于定值跟踪）
 };
 
 /**
- * @brief Positional PID controller
+ * @brief 位置式 PID 控制器
  *
- * @par Features
- *      - Standard P/I/D + feedforward
- *      - Dead zone
- *      - Variable integral speed (变速积分)
- *      - Integral separation (积分分离)
- *      - Derivative on measurement (微分先行)
- *      - D-term low-pass filter
- *      - Output / integral clamping
- *      - Angle-mode with wraparound handling
+ * @par 功能特性
+ *      - 标准 P/I/D + 前馈
+ *      - 死区
+ *      - 变速积分（变速积分）
+ *      - 积分分离（积分分离）
+ *      - 微分先行（微分先行）
+ *      - D 项低通滤波
+ *      - 输出 / 积分限幅
+ *      - 角度模式（劣弧环绕处理）
  *
- * @par Usage
+ * @par 用法
  * @code
  *   alg::pid::Pid pid({.kp = 3.0f, .ki = 0.1f, .kd = 0.05f, .outMax = 60.0f});
  *   float out = pid.Calc(target, now);
@@ -44,50 +43,38 @@ class Pid final
 {
 public:
     /**
-     * @brief PID configuration (all fields have defaults)
+ * @brief PID 配置参数（全部有默认值）
      *
-     * @note Use C++20 designated initializers for clarity:
+     * @note 推荐使用 C++20 指定初始化器：
      *       @c Pid::Config{.kp=3, .ki=0.1, .outMax=60}
      */
     struct Config {
         float kp               = 0.0f;
         float ki               = 0.0f;
         float kd               = 0.0f;
-        float kf               = 0.0f;   ///< feedforward gain
-        float iOutMax          = 0.0f;   ///< 0 = no integral limit
-        float outMax           = 0.0f;   ///< 0 = no output limit
-        float dt               = 0.001f; ///< control period (seconds)
+        float kf               = 0.0f;                  // 前馈增益
+        float iOutMax          = 0.0f;                  // 0 = 无积分限幅
+        float outMax           = 0.0f;                  // 0 = 无输出限幅
+        float dt               = 0.001f;                // 控制周期（秒）
         float deadZone         = 0.0f;
-        float iVariableSpeedA  = 0.0f;   ///< variable-integral lower threshold
-        float iVariableSpeedB  = 0.0f;   ///< variable-integral upper threshold
-        float iSeparateThresh  = 0.0f;   ///< integral-separation threshold (0 = off)
+        float iSpeedThreshLo   = 0.0f;                  // 变速积分误差阈值下限（|error| ≤ Lo → 全速积分）
+        float iSpeedThreshHi   = 0.0f;                  // 变速积分误差阈值上限（|error| ≥ Hi → 停积分 + 清零）
+        float iSeparateThresh  = 0.0f;                  // 积分分离阈值（0 = 关闭。与 iSpeedThreshHi 功能重叠，建议二选一）
         DFirst dFirst          = DFirst::Disable;
-        float dLpfTau          = 0.0f;   ///< D LPF time constant (0 = no filter)
+        float dLpfCutoffHz     = 0.0f;                  // D 项 LPF 截止频率（Hz，0 = 无滤波；alpha = 1/(1 + 2πfc·dt)）
     };
 
     Pid() = default;
-    explicit Pid(const Config& cfg) : cfg_(cfg) {}
+    explicit Pid(const Config& cfg);
 
-    /** @brief (Re)configure all parameters */
-    void Init(const Config& cfg) { cfg_ = cfg; }
+    void Init(const Config& cfg);
 
-    /**
-     * @brief Shadow-set params (double-buffered, safe during runtime)
-     * @details Writes to a shadow config. Calc() swaps it in atomically
-     *          at the next cycle, so params never change mid-computation.
-     */
     void SetShadow(const Config& cfg)
     {
         shadowCfg_     = cfg;
         shadowPending_ = true;
     }
 
-    /**
-     * @brief One-shot PID calculation
-     * @param target  setpoint
-     * @param now     feedback
-     * @return        controller output
-     */
     float Calc(float target, float now)
     {
         SetTarget(target);
@@ -95,16 +82,8 @@ public:
         return Calc();
     }
 
-    /**
-     * @brief Stateful PID calculation (use SetTarget / SetNow first)
-     * @return controller output
-     */
     float Calc();
 
-    /**
-     * @brief Angle-mode PID with wraparound handling (-π ~ π)
-     * @return controller output
-     */
     float CalcAngle();
 
     void SetKp(float v)             { cfg_.kp = v; }
@@ -148,11 +127,9 @@ private:
     float preError_      = 0.0f;
 
     float integralError_ = 0.0f;
+    float dLpfAlpha_     = 0.0f;
     float dLpfOutput_    = 0.0f;
 
-    static void Clamp(float* v, float lo, float hi);
-
-    /** @brief 公共 PID 计算（双缓冲 → 死区 → 变速积分 → PID → 前馈 → 限幅） */
     float CalcImpl(float error);
 };
 

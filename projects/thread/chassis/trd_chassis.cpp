@@ -39,14 +39,14 @@
  *
  * | 参数 | 当前值 | 说明 | 备注 |
  * |------|--------|------|------|
- * | kChassisR | 0.135m | 舵轮距底盘中心距离 | 需实测 |
- * | kWheelR | 0.1m | 轮子半径 | 需实测 |
- * | kGearboxRatio | 3591/187 | 减速比 | M3508 官方数据，已确认 |
- * | KMaxMoveVelocity | 0.5m/s | 最大移动速度 | 调参确定 |
- * | KMaxRotationOmega | 2.0rad/s | 最大自旋角速度 | 调参确定 |
- * | kTorqueK | 0.3 N·m/A | C620 转矩常数 | 手册数据，已确认 |
- * | kSteerSign | -1 | 舵向方向补偿 | 电机安装方向确认后锁定 |
- * | kDriveSign | +1/-1 | 行进方向补偿 | 电机安装方向确认后锁定 |
+ * | kChassisR         | 0.135m    | 舵轮距底盘中心距离 | 需实测 |
+ * | kWheelR           | 0.1m      | 轮子半径          | 需实测 |
+ * | kGearboxRatio     | 3591/187  | 减速比            | M3508 官方数据，已确认 |
+ * | KMaxMoveVelocity  | 0.5m/s    | 最大移动速度       | 调参确定 |
+ * | KMaxRotationOmega | 2.0rad/s  | 最大自旋角速度     | 调参确定 |
+ * | kTorqueK          | 0.3 N·m/A | C620 转矩常数      | 手册数据，已确认 |
+ * | kSteerSign        | -1        | 舵向方向补偿       | 电机安装方向确认后锁定 |
+ * | kDriveSign        | +1/-1     | 行进方向补偿       | 电机安装方向确认后锁定 |
  *
  * @copyright Copyright (c) 2026
  */
@@ -315,46 +315,45 @@ void thread_init()
     #endif
 
     // 功率预测模型初始化
+
+    // 转向组：角度误差敏感，上限 80%
     {
-        // 转向组：角度误差敏感，上限 80%
-        {
-            constexpr float k1 = 1.453009e-07f;
-            constexpr float k2 = 5.171939e-03f;
-            constexpr float k3 = 3.0f;
+        constexpr float k1 = 1.453009e-07f;
+        constexpr float k2 = 5.171939e-03f;
+        constexpr float k3 = 3.0f;
 
-            alg::power_ctrl::PowerCtrl::Config cfg{};
-            cfg.k1Init      = k1;
-            cfg.k2Init      = k2;
-            cfg.torqueK     = kTorqueK;
-            cfg.motorCount  = N_Wheel;
-            cfg.k3          = k3;
-            cfg.errUpper    = 50.0f;
-            cfg.errLower    = 0.01f;
-            cfg.rlsLambda   = 0.999f;
-            cfg.rlsEnable   = IS_ENABLED(CONFIG_USE_POWERMETER);
-            cfg.tauOmegaEnable = cfg.rlsEnable;
-            SteerPwrCtrl.Init(cfg);
-        }
+        alg::power_ctrl::PowerCtrl::Config cfg{};
+        cfg.k1Init      = k1;
+        cfg.k2Init      = k2;
+        cfg.torqueK     = kTorqueK;
+        cfg.motorCount  = N_Wheel;
+        cfg.k3          = k3;
+        cfg.errUpper    = 50.0f;
+        cfg.errLower    = 0.01f;
+        cfg.rlsLambda   = 0.999f;
+        cfg.rlsEnable   = IS_ENABLED(CONFIG_USE_POWERMETER);
+        cfg.tauOmegaEnable = cfg.rlsEnable;
+        SteerPwrCtrl.Init(cfg);
+    }
 
-        // 行进组：拿剩余功率，速度误差范围大
-        {
-            constexpr float k1 = 1.453009e-07f;
-            constexpr float k2 = 5.171939e-03f;
-            constexpr float k3 = 3.5f;
+    // 行进组：拿剩余功率，速度误差范围大
+    {
+        constexpr float k1 = 1.453009e-07f;
+        constexpr float k2 = 5.171939e-03f;
+        constexpr float k3 = 3.5f;
 
-            alg::power_ctrl::PowerCtrl::Config cfg{};
-            cfg.k1Init      = k1;
-            cfg.k2Init      = k2;
-            cfg.torqueK     = kTorqueK;
-            cfg.motorCount  = N_Wheel;
-            cfg.k3          = k3;
-            cfg.errUpper    = 500.0f;
-            cfg.errLower    = 0.001f;
-            cfg.rlsEnable   = IS_ENABLED(CONFIG_USE_POWERMETER);
-            cfg.rlsLambda   = 0.999f;
-            cfg.tauOmegaEnable = cfg.rlsEnable;
-            DrivePwrCtrl.Init(cfg);
-        }
+        alg::power_ctrl::PowerCtrl::Config cfg{};
+        cfg.k1Init      = k1;
+        cfg.k2Init      = k2;
+        cfg.torqueK     = kTorqueK;
+        cfg.motorCount  = N_Wheel;
+        cfg.k3          = k3;
+        cfg.errUpper    = 500.0f;
+        cfg.errLower    = 0.001f;
+        cfg.rlsEnable   = IS_ENABLED(CONFIG_USE_POWERMETER);
+        cfg.rlsLambda   = 0.999f;
+        cfg.tauOmegaEnable = cfg.rlsEnable;
+        DrivePwrCtrl.Init(cfg);
     }
 
     // 电机 + PID 初始化，每轮先转向后行进

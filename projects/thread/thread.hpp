@@ -30,7 +30,7 @@ public:
     }
 
 private:
-    k_thread thread_{};
+    k_thread thread_ {};
     K_KERNEL_STACK_MEMBER(stack_, StackSize);
 };
 

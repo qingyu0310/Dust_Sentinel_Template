@@ -9,6 +9,12 @@
 #pragma once
 
 #include <cstdint>
+#include "imu_to.hpp"
+#include "quaternion_ekf.hpp"
+#include "pid.hpp"
+#include "pwm.hpp"
+#include "thread.hpp"
+#include "timer.hpp"
 
 /**
  * @brief 一帧 IMU 工程量样本
@@ -53,16 +59,83 @@ public:
     virtual uint32_t PeriodMs() const { return 1; }
 };
 
-namespace thread::imu {
+namespace attitude {
 
-/**
- * @brief 初始化 IMU 模块
- */
-void thread_init();
+class Processor final
+{
+public:
+    void Init();
+    void Process(const Sample& sample, topic::imu_to::Message& pub);
 
-/**
- * @brief 启动 IMU 工作线程
- */
-void thread_start(uint8_t prio = 5);
+private:
+    alg::attitude::QuaternionEkf ekf_ {};
+};
 
-} // namespace thread::imu
+} // namespace attitude
+
+namespace heater {
+
+class Heater final
+{
+public:
+    bool Init();
+    void Update(float temperature);
+    bool IsStable(float temperature, float tolerance = 0.5f) const;
+    float GetDuty() const { return duty_; }
+
+private:
+    static constexpr float kMaxDuty = 0.95f;
+    static constexpr float target_temperature_ = 40.0f;
+
+    static constexpr alg::pid::Pid::Config kDefaultPidConfig {
+        .kp         = 0.13f,
+        .ki         = 0.03f,
+        .kd         = 0.0f,
+        .iOutMax    = 0.5f,
+        .outMax     = kMaxDuty,
+        .dt         = 0.001f,
+    };
+
+    Pwm heater_pwm_ {};
+    alg::pid::Pid pid_ {};
+    float duty_ = 0.0f;
+    bool  initialized_ = false;
+};
+
+} // namespace heater
+
+namespace imu {
+
+class ImuManager final
+{
+public:
+    void Init(bool enable_auto_calibration = false);
+    void Start(uint8_t prio);
+    bool IsReady() const { return ready_; }
+
+private:
+    bool SelectSource();
+    bool PrepareCalibration();
+    bool Process(const Sample& sample);
+    void Task();
+
+    static void TaskEntry(void *p1, void *p2, void *p3)
+    {
+        ARG_UNUSED(p2);
+        ARG_UNUSED(p3);
+        auto *self = static_cast<ImuManager*>(p1);
+        self->Task();
+    }
+
+    Thread<4096>                    thread_     {};
+    Source                         *source_     = nullptr;
+    Sample                          sample_     {};
+    attitude::Processor             attitude_   {};
+    Timer                           timer_      {100};
+    heater::Heater                  heater_     {};
+    topic::imu_to::Message          pub_        {};
+    uint32_t                        last_sample_cycle_ = 0;
+    bool                            ready_      = false;
+};
+
+} // namespace imu

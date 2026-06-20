@@ -18,119 +18,10 @@
 #include "vt13.hpp"
 
 #include <string.h>
-#include <zephyr/logging/log.h>
-
-LOG_MODULE_REGISTER(remote, LOG_LEVEL_INF);
 
 using namespace topic::remote_to;
 
 namespace remote {
-
-/**
- * @brief 带状态机的遥控器解码与自动识别 worker。
- */
-class Remote final
-{
-public:
-    using ValidateFunc = bool (*)(const uint8_t *buffer, uint8_t len);
-    using DecodeFunc = bool (*)(const uint8_t *buffer, uint8_t len, Message &pub);
-
-    /**
-     * @brief 固定协议模式和自动识别共用的协议描述项。
-     */
-    struct Protocol {
-        RemoteType    type;             // 协议类型，用于记录当前锁定的遥控器来源。
-        const char    *name;            // 调试日志中显示的协议名称。
-        uint16_t      frame_size;       // 该协议单帧长度，滑窗和消费缓冲区时使用。
-        ValidateFunc  validate;         // 只判断当前窗口是否像本协议合法帧，不修改发布数据。
-        DecodeFunc    decode;           // 将合法帧解码到 topic::remote_to::Message，不直接发布。
-        uint8_t       lock_score;       // 连续命中多少帧后才锁定该协议，用于降低误识别概率。
-    };
-
-    /**
-     * @brief UART 字节流解析器当前状态。
-     */
-    enum class DetectState : uint8_t
-    {
-        Detecting,
-        Locked,
-    };
-
-    /**
-     * @brief 绑定 UART RX 数据流，并选择协议工作模式。
-     *
-     * @param type 固定协议类型，或 RemoteType::Auto。
-     * @param uart RX 数据流，通过 rx_sem_ 唤醒本线程。
-     */
-    void Init(RemoteType type, RxStream &uart)
-    {
-        configured_type_ = type;
-        active_type_     = RemoteType::None;
-        detect_state_    = DetectState::Detecting;
-        k_sem_init(&rx_sem_, 0, 1);
-        uart_ = &uart;
-        uart_->SetNotify(&rx_sem_);
-        InitFrameSizeRange();
-        GetProcessFunc();
-    }
-
-    /**
-     * @brief 启动遥控器 worker 线程。
-     *
-     * @param prio Zephyr 线程优先级。
-     */
-    void Start(uint8_t prio = 5)
-    {
-        thread_.Start(TaskEntry, prio, this);
-    }
-
-private:
-    Thread<1024 * 8> thread_ {};
-    RxStream *uart_ = nullptr;
-
-    RemoteType  configured_type_ = RemoteType ::Auto;
-    RemoteType  active_type_     = RemoteType ::None;
-    DetectState detect_state_    = DetectState::Detecting;
-
-    static constexpr uint16_t kFrameBufSize     = 64;
-    static constexpr uint8_t  kUnlockFailLimit  = 5;
-    static constexpr uint32_t kRemoteTimeoutMs  = 100;
-    static constexpr uint8_t  kProtocolCount    = static_cast<uint8_t>(RemoteType::Auto);
-
-    uint8_t  frame_buf_[kFrameBufSize] {};
-    uint16_t frame_pos_ = 0;
-    k_sem    rx_sem_;
-
-    Message  pub_   {};
-    Protocol proto_ {};
-    uint8_t  hit_count_[kProtocolCount] {};
-    uint8_t  fail_count_     = 0;
-    uint32_t last_valid_ms_  = 0;
-    uint16_t min_frame_size_ = 0;
-    uint16_t max_frame_size_ = 0;
-    
-    void InitFrameSizeRange();
-    void GetProcessFunc();
-    const Protocol *FindProtocol(RemoteType type);
-    void ResetDetect();
-    void Consume(uint16_t len);
-    void DropOneByte();
-    void ClearPubData();
-    void Publish();
-    void HandleLocked();
-    void HandleDetecting();
-    void ProcessBuffered();
-    void ProcessChunk(const uint8_t *data, uint16_t len);
-    void Task();
-
-    static void TaskEntry(void *p1, void *p2, void *p3)
-    {
-        ARG_UNUSED(p2);
-        ARG_UNUSED(p3);
-        auto self = static_cast<Remote *>(p1);
-        self->Task();
-    }
-};
 
 /**
  * @brief 自动识别使用的协议优先级表。
@@ -144,6 +35,39 @@ static constexpr Remote::Protocol kProtocolTable[] {
     { RemoteType::VT12, "VT12", vt12::kFrameSizeVT12, vt12::validate, vt12::decode, 2 },
     { RemoteType::DR16, "DR16", dr16::kFrameSizeDR16, dr16::validate, dr16::decode, 3 },
 };
+
+/**
+ * @brief 绑定 UART RX 数据流，并选择协议工作模式。
+ *
+ * @param type 固定协议类型，或 RemoteType::Auto。
+ * @param uart RX 数据流，通过 rx_sem_ 唤醒本线程。
+ */
+void Remote::Init(RemoteType type, RxStream &uart)
+{
+    configured_type_ = type;
+    active_type_     = RemoteType::None;
+    detect_state_    = DetectState::Detecting;
+    k_sem_init(&rx_sem_, 0, 1);
+    uart_ = &uart;
+    uart_->SetNotify(&rx_sem_);
+    InitFrameSizeRange();
+    GetProcessFunc();
+    ready_ = true;
+}
+
+/**
+ * @brief 启动遥控器 worker 线程。
+ *
+ * @param prio Zephyr 线程优先级。
+ */
+void Remote::Start(uint8_t prio)
+{
+    if (!ready_) {
+        return;
+    }
+
+    thread_.Start(TaskEntry, prio, this);
+}
 
 /**
  * @brief 按协议类型查找协议描述项。
@@ -427,7 +351,8 @@ void Remote::Task()
 {
     for (;;)
     {
-        if (k_sem_take(&rx_sem_, K_MSEC(50)) == 0) {
+        if (k_sem_take(&rx_sem_, K_MSEC(50)) == 0) 
+        {
             uint8_t tmp[32];
             while (true) {
                 uint16_t n = uart_->Read(tmp, sizeof(tmp));
@@ -456,50 +381,4 @@ void Remote::Task()
 }
 
 } // namespace remote
-
-namespace thread::remote {
-
-static ::remote::Remote remote_ {};
-static bool remote_ready_ = false;
-
-/**
- * @brief 初始化 UART DMA，并将遥控器解码器配置为自动识别模式。
- */
-void thread_init()
-{
-    static UartDma rx {};
-    RxStream::Config cfg {};
-
-    constexpr uint16_t kBufferSize = 128;
-    constexpr uint16_t kTimeour    = 1000;
-
-    cfg.buf_size   = kBufferSize;
-    cfg.rx_timeout = kTimeour;
-
-    if (!rx.Init(DEVICE_DT_GET(DT_ALIAS(remote_uart)), cfg)) {
-        LOG_ERR("uart init failed");
-        remote_ready_ = false;
-        return;
-    }
-
-    remote_.Init(RemoteType::Auto, rx);
-    remote_ready_ = true;
-    LOG_INF("remote ready");
-}
-
-/**
- * @brief 如果初始化成功，则启动遥控器线程。
- *
- * @param prio Zephyr 线程优先级。
- */
-void thread_start(uint8_t prio)
-{
-    if (!remote_ready_) {
-        return;
-    }
-
-    remote_.Start(prio);
-}
-
-} // namespace thread::remote
 

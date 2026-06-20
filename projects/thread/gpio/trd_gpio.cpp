@@ -16,13 +16,13 @@
 #include "input.hpp"
 #include "zephyr/sys/printk.h"
 
-#define GPIO_GET(node_id)   GPIO_DT_SPEC_GET(DT_NODELABEL(node_id), gpios)
-
 namespace thread::output {
 
 static Thread<2048> thread_{};
 
 static Output led_alert{};
+
+volatile static uint8_t test_counter = 0;
 
 static void Task(void*, void*, void*)
 {
@@ -36,7 +36,8 @@ static void Task(void*, void*, void*)
         timer.Update();
 
         timer.Clock(([](){
-            printk("tick\n");
+            test_counter++;
+            printk("%d\n", test_counter);
         }));
 
         const int64_t elapsed = k_uptime_get() - tick_start;
@@ -63,7 +64,7 @@ namespace thread::input {
 
 static Thread<> thread_{};
 
-/*  占位：预留用于按键/传感器输入，待实现 */
+// 占位：预留用于按键/传感器输入，待实现
 static void Task(void*, void*, void*)
 {
     for (;;)

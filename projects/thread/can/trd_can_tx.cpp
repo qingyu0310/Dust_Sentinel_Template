@@ -27,14 +27,15 @@ static Can user_can1{};
 
 static void Task(void*, void*, void*)
 {
-    can_frame tx{};
+    can_frame tx { 
+        .dlc = 8,
+    };
     topic::to_can_tx::Message msg{};
 
     for (;;)
     {
         k_msgq_get(&user_can1_msgq, &msg, K_FOREVER);
         tx.id  = msg.tx_id;
-        tx.dlc = 8;
         memcpy(tx.data, msg.data, 8);
 
         user_can1.Send(&tx);

@@ -22,8 +22,10 @@ static Usb usb_ {};
 
 static void Task(void*, void*, void*)
 {
+    constexpr uint8_t send[] = "tick\r\n";
     for (;;)
     {
+        usb_.Send(send, sizeof(send));
         k_sleep(K_MSEC(1000));
     }
 }

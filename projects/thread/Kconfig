@@ -51,7 +51,7 @@ config TRD_GIMBAL
 
 config TRD_CAN_TX
     bool "CAN TX thread"
-    default n
+    default y
     select COM_CAN
     select TPC_TO_CAN_TX
     help
@@ -61,7 +61,7 @@ config TRD_CAN_TX
 
 config TRD_REMOTE
     bool "Remote thread"
-    default n
+    default y
     select MOD_DEV_REMOTE
     help
       Enable remote receiver thread.
@@ -70,7 +70,7 @@ config TRD_REMOTE
 
 config TRD_IMU
     bool "IMU thread"
-    default n
+    default y
     select MOD_DEV_IMU
     select TPC_IMU_TO
     help

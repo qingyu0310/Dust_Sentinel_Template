@@ -22,6 +22,22 @@ if(CONFIG_TRD_GIMBAL)
 	)
 endif()
 
+if(CONFIG_TRD_REMOTE)
+	target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/remote/trd_remote.cpp)
+	target_include_directories(app PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}
+		${CMAKE_CURRENT_SOURCE_DIR}/remote
+	)
+endif()
+
+if(CONFIG_TRD_IMU)
+	target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/imu/trd_imu.cpp)
+	target_include_directories(app PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}
+		${CMAKE_CURRENT_SOURCE_DIR}/imu
+	)
+endif()
+
 if(CONFIG_TRD_CAN_TX)
 	target_sources(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/can/trd_can_tx.cpp)
 	target_include_directories(app PRIVATE

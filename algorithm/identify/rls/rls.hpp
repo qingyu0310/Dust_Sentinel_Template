@@ -160,8 +160,7 @@ private:
     /* ---------- 矩阵运算辅助 ---------- */
 
     /** C[m×n] = A[m×k] × B[k×n] (列优先) */
-    void Multiply(float* c, const float* a, const float* b,
-                  uint8_t m, uint8_t k, uint8_t n) const
+    void Multiply(float* c, const float* a, const float* b, uint8_t m, uint8_t k, uint8_t n) const
     {
         for (uint8_t col = 0; col < n; col++) {
             for (uint8_t row = 0; row < m; row++) {
@@ -175,8 +174,7 @@ private:
     }
 
     /** C[m×n] = A[m×n] + B[m×n] */
-    void Add(float* c, const float* a, const float* b,
-             uint8_t rows, uint8_t cols) const
+    void Add(float* c, const float* a, const float* b, uint8_t rows, uint8_t cols) const
     {
         const uint16_t len = static_cast<uint16_t>(rows) * cols;
         for (uint16_t i = 0; i < len; i++) {
@@ -185,8 +183,7 @@ private:
     }
 
     /** C[m×n] = A[m×n] - B[m×n] */
-    void Subtract(float* c, const float* a, const float* b,
-                  uint8_t rows, uint8_t cols) const
+    void Subtract(float* c, const float* a, const float* b, uint8_t rows, uint8_t cols) const
     {
         const uint16_t len = static_cast<uint16_t>(rows) * cols;
         for (uint16_t i = 0; i < len; i++) {
@@ -195,8 +192,7 @@ private:
     }
 
     /** B[n×m] = Aᵀ[m×n] */
-    void Transpose(float* b, const float* a,
-                   uint8_t rows, uint8_t cols) const
+    void Transpose(float* b, const float* a, uint8_t rows, uint8_t cols) const
     {
         for (uint8_t r = 0; r < rows; r++) {
             for (uint8_t c = 0; c < cols; c++) {
