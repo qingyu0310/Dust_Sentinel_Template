@@ -7,3 +7,6 @@
 [submodule "drivers"]
 	path = drivers
 	url = https://github.com/qingyu0310/Dust_Zephyr_Architecture_Drivers.git
+[submodule "cmd"]
+	path = cmd
+	url = https://github.com/qingyu0310/Dust_Zephyr_Architecture_Cmd.git
