@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.20.0)
 
 # 项目选择 — 通过 Kconfig CONFIG_PRJ_TEST=y 控制 apps/ 和 threads/ 的加载
 set(ACTIVE_PRJ "test" CACHE STRING "Active project")
-set(PROJ_DIR projects)
+set(PROJ_DIR project)
 set(CONFIG_SYM PRJ_TEST)
 
 # SDK glue 路径：HPMicro 板级/SOC/DTS 补丁

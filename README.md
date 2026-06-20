@@ -4,7 +4,7 @@
 
 **这个框架是一个集成环境，不是一块积木。**
 
-用户需要做的只是写好三样东西——**初始化流程（apps）、板级配置（boards）、线程逻辑（thread）**——然后塞进 `projects/` 目录，框架自动把它们嵌入到整个编译和运行环境中。
+用户需要做的只是写好三样东西——**初始化流程（apps）、板级配置（boards）、线程逻辑（thread）**——然后塞进 `project/` 目录，框架自动把它们嵌入到整个编译和运行环境中。
 
 ```
                     ┌──────────────────────────┐
@@ -14,7 +14,7 @@
                     └──────────┬───────────────┘
                                │ 嵌入
                     ┌──────────▼───────────────┐
-                    │    projects/ （用户代码）   │
+                    │    project/ （用户代码）   │
                     │  ┌──────┐ ┌──────┐ ┌───┐ │
                     │  │ apps │ │boards│ │thread│ │
                     │  │ 启动 │ │板配置│ │线程│ │
@@ -22,7 +22,7 @@
                     └──────────────────────────┘
 ```
 
-`projects/` 与框架的关系是**嵌入，而不是相辅相成**。你完全可以复制一份 `projects/` 到另一个框架项目里直接用，只要驱动/模块接口一致。
+`project/` 与框架的关系是**嵌入，而不是相辅相成**。你完全可以复制一份 `project/` 到另一个框架项目里直接用，只要驱动/模块接口一致。
 
 ---
 
@@ -35,14 +35,14 @@
 └──────────────────────┬──────────────────────────┘
                        │ 调用
 ┌──────────────────────▼──────────────────────────┐
-│                  应用层 projects/                 │
+│                  应用层 project/                 │
 │  ┌──────────┐ ┌──────────┐ ┌────────────────┐   │
 │  │  apps/   │ │ boards/  │ │   thread/      │   │
 │  │ 启动编排  │ │ DTS+配置  │ │  GPIO/遥控/    │   │
 │  │          │ │ +烧录脚本 │ │  底盘/云台/    │   │
 │  │          │ │          │ │  IMU/PC通信    │   │
 │  └──────────┘ └──────────┘ └────────────────┘   │
-│  每个 projects/ 是一个完整的可移植项目单元         │
+│  每个 project/ 是一个完整的可移植项目单元         │
 └──────────────────────┬──────────────────────────┘
                        │ 调用
          ┌─────────────┼─────────────┐
@@ -84,25 +84,25 @@ Zephyr HAL        ← 厂商提供，框架不关心
 模块层 modules/   ← 面向硬件的功能封装，只依赖驱动层 Kconfig
 话题层 topic/    ← zbus 数据结构定义，无业务逻辑
 命令层 cmd/      ← 调试接口，依赖模块层
-应用层 projects/ ← 嵌入选中的模块/驱动/算法组成完整系统
+应用层 project/ ← 嵌入选中的模块/驱动/算法组成完整系统
 ```
 
 ---
 
-## projects/ —— 可移植项目单元
+## project/ —— 可移植项目单元
 
 ### 设计思想
 
-`projects/` 不是框架的一部分，而是**嵌入到框架中的用户代码**。
+`project/` 不是框架的一部分，而是**嵌入到框架中的用户代码**。
 
 ```
 复制一个项目到其他框架：
-  cp -r projects/my_project another_framework/projects/
+  cp -r project/my_project another_framework/project/
   修改 CMakeLists.txt 的 PROJECT_DIR 和 CONFIG_SYM
   west build → 直接跑
 
 换一个项目到当前框架：
-  把旧的 projects/ 备份，新的 projects/ 放进来
+  把旧的 project/ 备份，新的 project/ 放进来
   重新配置 → 编译 → 跑
 ```
 
@@ -130,17 +130,17 @@ System_Thread_Start()   → 各模块按优先级 thread_start()
 
 每个步骤通过 `#ifdef CONFIG_TRD_XXX` 条件编译。新增线程只需：
 
-1. `projects/thread/xxx/` 下写 `trd_xxx.cpp` + `trd_xxx.hpp`
-2. `projects/thread/Kconfig` 加 `config TRD_XXX`
-3. `projects/thread/CMakeLists.txt` 加编译条件
+1. `project/thread/xxx/` 下写 `trd_xxx.cpp` + `trd_xxx.hpp`
+2. `project/thread/Kconfig` 加 `config TRD_XXX`
+3. `project/thread/CMakeLists.txt` 加编译条件
 4. `System_startup.cpp` 加三段 `#ifdef` 调用
 
 ### 板级配置
 
-`projects/boards/` 按 `厂商/板型/` 组织：
+`project/boards/` 按 `厂商/板型/` 组织：
 
 ```
-projects/boards/
+project/boards/
 ├── hpm/
 │   ├── hpm5361icb/     ← HPM5361ICB 板
 │   └── hpm6e00evk/     ← HPM6E00EVK 板
@@ -171,7 +171,7 @@ west build -b hpm5361icb -- -DBOARD_CFG=hpm5361icb
 west build -b stm32f407igh6 -- -DBOARD_CFG=board_rm_c
 ```
 
-`BOARD_CFG` 指向 `projects/boards/*/<BOARD_CFG>/` 下的配置组。
+`BOARD_CFG` 指向 `project/boards/*/<BOARD_CFG>/` 下的配置组。
 
 ---
 
@@ -246,12 +246,12 @@ prj.conf                        → 项目公共（与具体板型无关）
   ├ CONFIG_HW_STACK_PROTECTION
   └ CONFIG_UART_CONSOLE
 
-projects/boards/*/*.conf        → 芯片层（与 SoC IP 绑定）
+project/boards/*/*.conf        → 芯片层（与 SoC IP 绑定）
   ├ CONFIG_MCAN_HPMICRO         → HPM CAN 控制器
   ├ CONFIG_DMAV2_HPMICRO        → HPM DMA 控制器
   └ CONFIG_CHERRYUSB_DEVICE_HPM → HPM USB 设备 IP
 
-projects/thread/Kconfig          → 功能模块开关
+project/thread/Kconfig          → 功能模块开关
   ├ TRD_CHASSIS → select MOD_CTL_POWER, select TPC_TO_CAN_TX
   ├ TRD_IMU     → select MOD_DEV_IMU
   └ TRD_PC      → select COM_USB
@@ -267,7 +267,7 @@ projects/thread/Kconfig          → 功能模块开关
 ├── drivers/            驱动层
 ├── modules/            模块层
 ├── topic/              话题层
-├── projects/           应用层（可移植项目单元）
+├── project/           应用层（可移植项目单元）
 │   ├── apps/           系统入口 + 启动编排
 │   ├── boards/         板级配置（DTS + Kconfig + 烧录脚本）
 │   └── thread/         RTOS 线程
