@@ -10,3 +10,6 @@
 [submodule "cmd"]
 	path = cmd
 	url = https://github.com/qingyu0310/Dust_Zephyr_Architecture_Cmd.git
+[submodule "algorithm"]
+	path = algorithm
+	url = https://github.com/qingyu0310/Dust_Zephyr_Architecture_Algorithm.git
