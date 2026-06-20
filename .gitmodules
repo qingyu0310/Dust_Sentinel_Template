@@ -4,3 +4,6 @@
 [submodule "modules"]
 	path = modules
 	url = https://github.com/qingyu0310/Dust_Zephyr_Architecture_Modules.git
+[submodule "drivers"]
+	path = drivers
+	url = https://github.com/qingyu0310/Dust_Zephyr_Architecture_Drivers.git
