@@ -75,14 +75,14 @@
 
 ### 各层的自洽性
 
-每一层都是独立的、可重用的，不依赖上层。每层目录下均有 `ARCHITECTURE.md` 描述其职责、边界、文件规范和依赖关系。
+每一层都是独立的、可重用的，不依赖上层：
 
 ```
 Zephyr HAL        ← 厂商提供，框架不关心
 驱动层 drivers/   ← 封装 HAL，不依赖以上任何层
 算法层 algorithm/ ← 纯数学，零硬件依赖，可独立测试
 模块层 modules/   ← 面向硬件的功能封装，只依赖驱动层 Kconfig
-话题层 topic/    ← zbus/消息队列数据结构定义，无业务逻辑
+话题层 topic/    ← zbus 数据结构定义，无业务逻辑
 命令层 cmd/      ← 调试接口，依赖模块层
 应用层 projects/ ← 嵌入选中的模块/驱动/算法组成完整系统
 ```
@@ -128,7 +128,12 @@ System_Modules_Init()   → 各模块按顺序 thread_init()
 System_Thread_Start()   → 各模块按优先级 thread_start()
 ```
 
-每个步骤通过 `#ifdef CONFIG_TRD_XXX` 条件编译。新增线程步骤详见 `projects/thread/ARCHITECTURE.md`。
+每个步骤通过 `#ifdef CONFIG_TRD_XXX` 条件编译。新增线程只需：
+
+1. `projects/thread/xxx/` 下写 `trd_xxx.cpp` + `trd_xxx.hpp`
+2. `projects/thread/Kconfig` 加 `config TRD_XXX`
+3. `projects/thread/CMakeLists.txt` 加编译条件
+4. `System_startup.cpp` 加三段 `#ifdef` 调用
 
 ### 板级配置
 
@@ -219,7 +224,17 @@ class RxStream {
 
 ### 算法层：零硬件依赖
 
-所有算法是纯数学，不包含任何 `#include <zephyr/...>`，可独立于框架进行单元测试。详见 `algorithm/ARCHITECTURE.md`。
+所有算法是纯数学，不包含任何 `#include <zephyr/...>`：
+
+```
+algorithm/
+├── controller/    PID、功率控制、定时器
+├── filter/        LPF、HPF、Kalman、Quaternion EKF
+├── identify/      RLS 递推最小二乘
+└── tflm/          TensorFlow Lite Micro 推理
+```
+
+可独立于整个框架进行单元测试。
 
 ---
 
@@ -247,11 +262,11 @@ projects/thread/Kconfig          → 功能模块开关
 ## 目录总览
 
 ```text
-├── algorithm/          算法层（→ ARCHITECTURE.md）
-├── cmd/                命令层（→ ARCHITECTURE.md）
-├── drivers/            驱动层（→ ARCHITECTURE.md）
-├── modules/            模块层（→ ARCHITECTURE.md）
-├── topic/              话题层（→ ARCHITECTURE.md）
+├── algorithm/          算法层
+├── cmd/                命令层
+├── drivers/            驱动层
+├── modules/            模块层
+├── topic/              话题层
 ├── projects/           应用层（可移植项目单元）
 │   ├── apps/           系统入口 + 启动编排
 │   ├── boards/         板级配置（DTS + Kconfig + 烧录脚本）
@@ -266,8 +281,17 @@ projects/thread/Kconfig          → 功能模块开关
 ## 构建
 
 ```bash
-.\cmd\build\build.bat hpm5361icb (boards层下具体目录)
-build.bat 会通过提供的目录循环查到对应目录下的.overlay
+# HPM5361ICB
+west build -b hpm5361icb -- -DBOARD_CFG=hpm5361icb
+
+# STM32F4 普中
+west build -b stm32f4_disco -- -DBOARD_CFG=puzhong
+
+# STM32F4 RM
+west build -b stm32f407igh6 -- -DBOARD_CFG=board_rm_c
+
+# HPM6E00EVK
+west build -b hpm6e00evk -- -DBOARD_CFG=hpm6e00evk
 ```
 
 HPMicro SDK Glue 默认从 `D:/Zephyr_HPMicro/sdk_glue` 引入，可通过 `SDK_GLUE_DIR` 环境变量覆盖。
