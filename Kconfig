@@ -1,7 +1,7 @@
 # 根 Kconfig — 项目入口门禁
-# 定义 CONFIG_PRJ_TEST 开关，控制应用代码（projects/）是否参与编译
+# 定义 CONFIG_PRJ_TEST 开关，控制应用代码（project/）是否参与编译
 # 子系统（CMSIS/zbus 等）的兼容性配置在此文件末尾
-# 所有功能模块 Kconfig 由 projects/thread/Kconfig 统一 rsource
+# 所有功能模块 Kconfig 由 project/thread/Kconfig 统一 rsource
 
 config DEBUG_LOG
     bool "Enable Zephyr LOG output"
@@ -27,7 +27,7 @@ config PRJ_TEST
     help
         测试项目
 if PRJ_TEST
-rsource "projects/thread/Kconfig"
+rsource "project/thread/Kconfig"
 endif
 
 
