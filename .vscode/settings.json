@@ -37,7 +37,7 @@
     "cortex-debug.openocdPath.windows": "D:/Zephyr_HPMicro/sdk_env/tools/openocd_backup/openocd.exe",
 
     "files.associations": {
-        "*.overlay": "dts",
+        "*.overlay": "devicetree",
         "*.conf": "properties",
         "Kconfig*": "kconfig"
     },
